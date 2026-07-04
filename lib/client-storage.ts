@@ -72,7 +72,8 @@ export function saveReportAsNote(report: AnalystReport) {
     symbol: report.target.match(/\(([^)]+)\)/)?.[1],
     tag: "AI 分析",
     createdAt: new Date().toISOString(),
-    excerpt: report.summary
+    excerpt: report.summary,
+    report
   };
   const next = [nextNote, ...existing];
   writeJson(NOTES_KEY, next);

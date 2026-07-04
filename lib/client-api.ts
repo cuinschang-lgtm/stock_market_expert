@@ -33,6 +33,11 @@ export async function fetchCloudNotes() {
   return readJson<{ configured: boolean; notes: ResearchNote[]; error?: string }>(response);
 }
 
+export async function fetchCloudNote(id: string) {
+  const response = await fetch(`/api/notes/${encodeURIComponent(id)}`, { cache: "no-store" });
+  return readJson<{ configured: boolean; note: ResearchNote | null; error?: string }>(response);
+}
+
 export async function saveCloudReportNote(report: AnalystReport) {
   const response = await fetch("/api/notes", {
     method: "POST",

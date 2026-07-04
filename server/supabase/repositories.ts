@@ -47,7 +47,8 @@ export function mapNoteRecord(record: NoteRecord): ResearchNote {
     symbol: record.symbol ?? undefined,
     tag: record.tag,
     excerpt: record.excerpt,
-    createdAt: record.created_at
+    createdAt: record.created_at,
+    report: record.report
   };
 }
 
@@ -122,6 +123,22 @@ export async function listResearchNotes(userId = DEFAULT_USER_ID) {
 
   if (error) throw error;
   return { configured: true, notes: (data as NoteRecord[]).map(mapNoteRecord) };
+}
+
+export async function getResearchNote(id: string, userId = DEFAULT_USER_ID) {
+  if (!isSupabaseConfigured()) return { configured: false, note: null };
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false, note: null };
+
+  const { data, error } = await supabase
+    .from("research_notes")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return { configured: true, note: data ? mapNoteRecord(data as NoteRecord) : null };
 }
 
 export async function insertResearchNote(report: AnalystReport, userId = DEFAULT_USER_ID) {

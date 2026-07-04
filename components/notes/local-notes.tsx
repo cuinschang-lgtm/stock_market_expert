@@ -1,6 +1,7 @@
 "use client";
 
 import { FileText, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cnDateTime } from "@/lib/formatters";
 import type { ResearchNote } from "@/lib/types";
@@ -74,7 +75,15 @@ export function LocalNotes() {
               <Trash2 className="h-4 w-4" />
             </button>
           </div>
-          <h2 className="mt-3 text-lg font-semibold text-ink">{note.title}</h2>
+          <h2 className="mt-3 text-lg font-semibold text-ink">
+            {source === "cloud" ? (
+              <Link href={`/notes/${note.id}`} className="hover:text-accent">
+                {note.title}
+              </Link>
+            ) : (
+              note.title
+            )}
+          </h2>
           <p className="mt-2 text-sm leading-6 text-muted">{note.excerpt}</p>
           <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold text-muted">
             {note.symbol ? <span>关联标的：{note.symbol}</span> : null}

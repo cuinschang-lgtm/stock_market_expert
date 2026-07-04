@@ -75,6 +75,7 @@ export interface ResearchNote {
   tag: string;
   createdAt: string;
   excerpt: string;
+  report?: AnalystReport | null;
 }
 
 export interface MarketIndex {

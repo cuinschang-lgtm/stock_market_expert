@@ -118,7 +118,7 @@ export default async function DashboardPage() {
             {data.notes.map((note) => (
               <Link
                 key={note.id}
-                href="/notes"
+                href={data.sources.notes === "cloud" ? `/notes/${note.id}` : "/notes"}
                 className="block rounded-lg border border-line p-3 transition hover:border-accent hover:bg-panel"
               >
                 <div className="text-sm font-semibold text-ink">{note.title}</div>
