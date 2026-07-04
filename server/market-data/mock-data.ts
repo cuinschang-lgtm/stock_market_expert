@@ -433,6 +433,7 @@ export const notes: ResearchNote[] = [
     symbol: "hk00700",
     tag: "个股复盘",
     createdAt: "2026-07-03T21:10:00+08:00",
+    status: "active",
     excerpt: "核心仍看游戏、广告和视频号商业化的增长质量，回购提升下行保护。"
   },
   {
@@ -441,6 +442,7 @@ export const notes: ResearchNote[] = [
     symbol: "usNVDA",
     tag: "主题研究",
     createdAt: "2026-07-02T18:45:00+08:00",
+    status: "archived",
     excerpt: "需求仍强，但市场已经对持续高增长给了较高估值，需要关注订单和毛利率。"
   }
 ];
