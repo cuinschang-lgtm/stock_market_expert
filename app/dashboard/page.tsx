@@ -3,10 +3,12 @@ import Link from "next/link";
 import { MetricCard } from "@/components/ui/metric-card";
 import { QuoteTable } from "@/components/stocks/quote-table";
 import { formatSignedPercent, trendClass } from "@/lib/formatters";
-import { getMarketDataProvider } from "@/server/market-data/provider";
+import { getDashboardViewData } from "@/server/dashboard-data";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const data = await getMarketDataProvider().getDashboardData();
+  const data = await getDashboardViewData();
 
   return (
     <div className="space-y-6">
@@ -15,7 +17,7 @@ export default async function DashboardPage() {
           <p className="text-sm font-semibold text-accent">Market Workspace</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink">今日投研仪表盘</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-            用 mock 数据先跑通市场概览、自选股异动、事件提醒和研究笔记闭环；后续通过 provider 接入真实数据。
+            市场概览继续走 provider 数据；自选股和研究笔记优先读取 Supabase 云端，未配置时回退演示数据。
           </p>
         </div>
         <Link
@@ -45,6 +47,9 @@ export default async function DashboardPage() {
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-accent" />
               <h2 className="text-lg font-semibold text-ink">自选股异动</h2>
+              <span className="rounded-full bg-teal-50 px-2 py-1 text-xs font-semibold text-accent">
+                {data.sources.watchlist === "cloud" ? "云端同步" : "演示数据"}
+              </span>
             </div>
             <Link href="/watchlist" className="text-sm font-semibold text-accent hover:text-teal-800">
               查看自选
@@ -99,7 +104,12 @@ export default async function DashboardPage() {
 
         <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-ink">最近研究笔记</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-ink">最近研究笔记</h2>
+              <span className="rounded-full bg-teal-50 px-2 py-1 text-xs font-semibold text-accent">
+                {data.sources.notes === "cloud" ? "云端同步" : "演示数据"}
+              </span>
+            </div>
             <Link href="/notes" className="text-sm font-semibold text-accent hover:text-teal-800">
               全部
             </Link>

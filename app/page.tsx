@@ -1,1 +1,1 @@
-export { default } from "./dashboard/page";
+export { default, dynamic } from "./dashboard/page";

@@ -37,7 +37,7 @@ export function QuoteTable({ quotes }: { quotes: QuoteSnapshot[] }) {
                 <td className={`whitespace-nowrap px-4 py-3 ${trendClass(quote.weekChangePercent)}`}>
                   {formatSignedPercent(quote.weekChangePercent)}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3">{quote.peTtm.toFixed(1)}</td>
+                <td className="whitespace-nowrap px-4 py-3">{quote.peTtm > 0 ? quote.peTtm.toFixed(1) : "-"}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted">{quote.turnover}</td>
               </tr>
             ))}

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import { getMarketDataProvider } from "@/server/market-data/provider";
+import { getDashboardViewData } from "@/server/dashboard-data";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const dashboard = await getMarketDataProvider().getDashboardData();
+  const dashboard = await getDashboardViewData();
   return NextResponse.json({ dashboard });
 }
