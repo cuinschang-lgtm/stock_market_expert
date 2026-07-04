@@ -4,7 +4,7 @@ import { Check, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { QuoteSnapshot } from "@/lib/types";
 import { addStoredWatchlistItem, isStoredWatchlistSymbol } from "@/lib/client-storage";
-import { addCloudWatchlistItem } from "@/lib/client-api";
+import { addCloudWatchlistItem, fetchCloudWatchlist } from "@/lib/client-api";
 
 export function WatchlistAction({ quote }: { quote: QuoteSnapshot }) {
   const [added, setAdded] = useState(false);
@@ -12,7 +12,28 @@ export function WatchlistAction({ quote }: { quote: QuoteSnapshot }) {
   const [mode, setMode] = useState<"local" | "cloud" | null>(null);
 
   useEffect(() => {
-    setAdded(isStoredWatchlistSymbol(quote.symbol));
+    let active = true;
+    async function loadStatus() {
+      try {
+        const result = await fetchCloudWatchlist();
+        if (active && result.configured) {
+          const exists = result.items.some((item) => item.symbol === quote.symbol);
+          setAdded(exists);
+          setMode(exists ? "cloud" : null);
+          return;
+        }
+      } catch {
+        // Fall back to browser storage below.
+      }
+      if (active) {
+        setAdded(isStoredWatchlistSymbol(quote.symbol));
+        setMode(isStoredWatchlistSymbol(quote.symbol) ? "local" : null);
+      }
+    }
+    loadStatus();
+    return () => {
+      active = false;
+    };
   }, [quote.symbol]);
 
   async function addToWatchlist() {

@@ -53,7 +53,7 @@ export default async function AnalystPage({
           <div>
             <div className="text-sm font-semibold text-ink">保存到研究笔记</div>
             <p className="mt-1 text-sm text-muted">
-              现在会保存到当前浏览器本地笔记；接入数据库后再同步到 `research_notes`。
+              分析结果会优先写入 Supabase 的 `research_notes`，未配置云端时自动保存到当前浏览器。
             </p>
           </div>
           <SaveReportAction report={report} />

@@ -15,7 +15,7 @@ export default async function WatchlistPage() {
           <p className="text-sm font-semibold text-accent">Watchlist</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink">自选股</h1>
           <p className="mt-2 text-sm leading-6 text-muted">
-            默认展示 mock 自选股；你在个股页加入的标的会保存到当前浏览器本地。
+            个股页加入的标的会优先保存到 Supabase 云端；下方保留一组 mock 标的用于演示行情和分组视图。
           </p>
         </div>
         <button className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white">

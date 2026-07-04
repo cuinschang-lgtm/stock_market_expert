@@ -12,7 +12,7 @@ export default function NotesPage() {
           <p className="text-sm font-semibold text-accent">Research Notes</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink">研究笔记</h1>
           <p className="mt-2 text-sm leading-6 text-muted">
-            用来保存 AI 分析、人工复盘和投资逻辑。当前先支持浏览器本地保存，后续接数据库。
+            用来沉淀 AI 分析、人工复盘和投资逻辑；优先同步到 Supabase 云端，未配置时自动回退本地。
           </p>
         </div>
         <Link
