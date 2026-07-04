@@ -1,4 +1,4 @@
-import type { AnalystReport, ResearchNote, QuoteSnapshot, UpdateResearchNoteInput } from "@/lib/types";
+import type { AnalystReport, InvestmentThesis, ResearchNote, QuoteSnapshot, UpdateResearchNoteInput } from "@/lib/types";
 import { DEFAULT_USER_ID, getSupabaseAdmin, isSupabaseConfigured } from "./client";
 
 export interface WatchlistRecord {
@@ -24,6 +24,7 @@ export interface NoteRecord {
   excerpt: string;
   body: string | null;
   status: ResearchNote["status"];
+  thesis: InvestmentThesis | null;
   report: AnalystReport | null;
   created_at: string;
   updated_at: string;
@@ -52,9 +53,26 @@ export function mapNoteRecord(record: NoteRecord): ResearchNote {
     excerpt: record.excerpt,
     body: record.body,
     status: record.status ?? "active",
+    thesis: record.thesis,
     createdAt: record.created_at,
     updatedAt: record.updated_at,
     report: record.report
+  };
+}
+
+function cleanList(items: string[] | undefined) {
+  return (items ?? []).map((item) => item.trim()).filter(Boolean);
+}
+
+function normalizeThesis(thesis: InvestmentThesis): InvestmentThesis {
+  return {
+    coreHypothesis: thesis.coreHypothesis.trim(),
+    keyMetrics: cleanList(thesis.keyMetrics),
+    catalysts: cleanList(thesis.catalysts),
+    invalidationSignals: cleanList(thesis.invalidationSignals),
+    conviction: thesis.conviction,
+    nextReviewAt: thesis.nextReviewAt || undefined,
+    updatedAt: new Date().toISOString()
   };
 }
 
@@ -181,10 +199,13 @@ export async function updateResearchNote(id: string, input: UpdateResearchNoteIn
   if (typeof input.body === "string") patch.body = input.body.trim();
   if (input.body === null) patch.body = null;
   if (input.status === "active" || input.status === "archived") patch.status = input.status;
+  if (input.thesis) patch.thesis = normalizeThesis(input.thesis);
+  if (input.thesis === null) patch.thesis = null;
 
   if (patch.title === "") throw new Error("title is required");
   if (patch.tag === "") throw new Error("tag is required");
   if (patch.excerpt === "") throw new Error("excerpt is required");
+  if (patch.thesis && patch.thesis.coreHypothesis === "") throw new Error("core hypothesis is required");
 
   const { data, error } = await supabase
     .from("research_notes")

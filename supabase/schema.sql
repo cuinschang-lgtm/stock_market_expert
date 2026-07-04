@@ -25,6 +25,7 @@ create table if not exists public.research_notes (
   excerpt text not null,
   body text,
   status text not null default 'active' check (status in ('active', 'archived')),
+  thesis jsonb,
   report jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -35,6 +36,9 @@ alter table public.research_notes
 
 alter table public.research_notes
   add column if not exists status text not null default 'active';
+
+alter table public.research_notes
+  add column if not exists thesis jsonb;
 
 do $$
 begin

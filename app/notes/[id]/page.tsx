@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ReportView } from "@/components/analyst/report-view";
 import { NoteEditor } from "@/components/notes/note-editor";
+import { ThesisTracker } from "@/components/notes/thesis-tracker";
 import { cnDateTime } from "@/lib/formatters";
 import { getResearchNote } from "@/server/supabase/repositories";
 
@@ -56,6 +57,8 @@ export default async function NoteDetailPage({ params }: { params: { id: string 
       </section>
 
       <NoteEditor note={note} />
+
+      <ThesisTracker note={note} />
 
       {note.report ? (
         <ReportView report={note.report} />

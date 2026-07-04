@@ -70,6 +70,18 @@ export interface WatchlistItem {
 
 export type ResearchNoteStatus = "active" | "archived";
 
+export type ThesisConviction = "low" | "medium" | "high";
+
+export interface InvestmentThesis {
+  coreHypothesis: string;
+  keyMetrics: string[];
+  catalysts: string[];
+  invalidationSignals: string[];
+  conviction?: ThesisConviction;
+  nextReviewAt?: string;
+  updatedAt?: string;
+}
+
 export interface ResearchNote {
   id: string;
   title: string;
@@ -80,6 +92,7 @@ export interface ResearchNote {
   excerpt: string;
   body?: string | null;
   status?: ResearchNoteStatus;
+  thesis?: InvestmentThesis | null;
   report?: AnalystReport | null;
 }
 
@@ -89,6 +102,7 @@ export interface UpdateResearchNoteInput {
   excerpt?: string;
   body?: string | null;
   status?: ResearchNoteStatus;
+  thesis?: InvestmentThesis | null;
 }
 
 export interface MarketIndex {
