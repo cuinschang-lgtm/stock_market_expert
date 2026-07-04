@@ -137,7 +137,7 @@ UI 风格建议：
 - `catalysts`
 - `source_citations`
 
-MVP 阶段可以先使用本地 mock 数据和浏览器 localStorage。只要接口形态稳定，后续迁移到 PostgreSQL 即可。
+MVP 阶段先使用本地 mock 数据，并支持 Supabase 云端持久化；如果 Supabase 密钥未配置，则自动回退到浏览器 localStorage。只要接口形态稳定，后续可以继续扩展 PostgreSQL 表结构。
 
 ### 3.4 缓存与任务
 

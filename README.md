@@ -33,7 +33,17 @@ npm run dev
 
 ## 当前持久化策略
 
-MVP 先用浏览器 `localStorage` 保存用户加入的自选股和 AI 分析笔记。它适合快速验证交互闭环，但不是跨设备/跨浏览器同步方案。下一阶段建议接入 Supabase 或 Neon Postgres，把 `watchlist_items` 和 `research_notes` 迁移到数据库。
+MVP 现在支持 Supabase 云端持久化，并保留浏览器 `localStorage` 兜底。未配置 Supabase service role key 时，用户加入的自选股和 AI 分析笔记会继续保存到当前浏览器。
+
+Supabase 项目：
+
+```text
+NEXT_PUBLIC_SUPABASE_URL=https://uogxhykrxgcnlxqcjnhg.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<Supabase project service_role key>
+DEFAULT_USER_ID=demo-user
+```
+
+初始化数据库时，在 Supabase SQL Editor 执行 `supabase/schema.sql`。当前 MVP 使用固定 `DEFAULT_USER_ID`，下一阶段接入 Supabase Auth 后再切换为真实用户 ID 和 RLS 策略。
 
 ## 后续数据源
 

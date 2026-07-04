@@ -5,18 +5,53 @@ import { useEffect, useState } from "react";
 import { cnDateTime } from "@/lib/formatters";
 import type { ResearchNote } from "@/lib/types";
 import { getStoredNotes, removeStoredNote } from "@/lib/client-storage";
+import { deleteCloudNote, fetchCloudNotes } from "@/lib/client-api";
 
 export function LocalNotes() {
   const [notes, setNotes] = useState<ResearchNote[]>([]);
+  const [source, setSource] = useState<"local" | "cloud">("local");
 
   useEffect(() => {
-    setNotes(getStoredNotes());
+    let active = true;
+    async function load() {
+      try {
+        const result = await fetchCloudNotes();
+        if (active && result.configured) {
+          setNotes(result.notes);
+          setSource("cloud");
+          return;
+        }
+      } catch {
+        // Fall back to browser storage below.
+      }
+      if (active) {
+        setNotes(getStoredNotes());
+        setSource("local");
+      }
+    }
+    load();
+    return () => {
+      active = false;
+    };
   }, []);
+
+  async function remove(id: string) {
+    if (source === "cloud") {
+      try {
+        await deleteCloudNote(id);
+        setNotes((current) => current.filter((note) => note.id !== id));
+        return;
+      } catch {
+        // Fall through to local deletion for resilience.
+      }
+    }
+    setNotes(removeStoredNote(id));
+  }
 
   if (notes.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-line bg-white p-5 text-sm leading-6 text-muted">
-        还没有本地保存的笔记。进入 AI Analyst，点击“保存笔记”后会显示在这里。
+        还没有{source === "cloud" ? "云端" : "本地"}保存的笔记。进入 AI Analyst，点击“保存笔记”后会显示在这里。
       </div>
     );
   }
@@ -32,7 +67,7 @@ export function LocalNotes() {
             </div>
             <button
               type="button"
-              onClick={() => setNotes(removeStoredNote(note.id))}
+              onClick={() => remove(note.id)}
               className="grid h-8 w-8 place-items-center rounded-lg border border-line text-muted transition hover:border-danger hover:text-danger"
               aria-label={`删除 ${note.title}`}
             >
