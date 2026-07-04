@@ -1,6 +1,7 @@
-import { Bot, Save } from "lucide-react";
+import { Bot } from "lucide-react";
 import Link from "next/link";
 import { ReportView } from "@/components/analyst/report-view";
+import { SaveReportAction } from "@/components/analyst/save-report-action";
 import { generateStockFastReport } from "@/server/analyst/report";
 
 export default async function AnalystPage({
@@ -52,13 +53,10 @@ export default async function AnalystPage({
           <div>
             <div className="text-sm font-semibold text-ink">保存到研究笔记</div>
             <p className="mt-1 text-sm text-muted">
-              MVP 阶段展示入口；接入数据库后这里会把分析结果写入 `research_notes`。
+              现在会保存到当前浏览器本地笔记；接入数据库后再同步到 `research_notes`。
             </p>
           </div>
-          <button className="inline-flex items-center justify-center gap-2 rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white">
-            <Save className="h-4 w-4" />
-            保存笔记
-          </button>
+          <SaveReportAction report={report} />
         </div>
       </section>
     </div>

@@ -1,4 +1,5 @@
 import { Plus, Star } from "lucide-react";
+import { LocalWatchlist } from "@/components/stocks/local-watchlist";
 import { QuoteTable } from "@/components/stocks/quote-table";
 import { watchlistItems } from "@/server/market-data/mock-data";
 import { getMarketDataProvider } from "@/server/market-data/provider";
@@ -14,7 +15,7 @@ export default async function WatchlistPage() {
           <p className="text-sm font-semibold text-accent">Watchlist</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink">自选股</h1>
           <p className="mt-2 text-sm leading-6 text-muted">
-            MVP 阶段使用 mock 自选股，后续接入用户账户后支持添加、删除、分组和事件提醒。
+            默认展示 mock 自选股；你在个股页加入的标的会保存到当前浏览器本地。
           </p>
         </div>
         <button className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white">
@@ -22,6 +23,8 @@ export default async function WatchlistPage() {
           添加标的
         </button>
       </section>
+
+      <LocalWatchlist />
 
       <section className="grid gap-4 md:grid-cols-4">
         {watchlistItems.map((item) => (

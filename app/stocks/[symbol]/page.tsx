@@ -1,7 +1,8 @@
-import { Bot, CalendarDays, FileText, Star } from "lucide-react";
+import { Bot, CalendarDays, FileText } from "lucide-react";
 import Link from "next/link";
 import { ReportView } from "@/components/analyst/report-view";
 import { KlineChart } from "@/components/stocks/kline-chart";
+import { WatchlistAction } from "@/components/stocks/watchlist-action";
 import { MetricCard } from "@/components/ui/metric-card";
 import { formatCurrency, formatSignedPercent } from "@/lib/formatters";
 import { generateStockFastReport } from "@/server/analyst/report";
@@ -38,13 +39,7 @@ export default async function StockDetailPage({ params }: { params: { symbol: st
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link
-              href="/watchlist"
-              className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-ink transition hover:border-accent"
-            >
-              <Star className="h-4 w-4" />
-              加入自选
-            </Link>
+            <WatchlistAction quote={quote} />
             <Link
               href={`/analyst?symbol=${quote.symbol}`}
               className="inline-flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"

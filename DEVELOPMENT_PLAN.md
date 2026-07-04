@@ -45,11 +45,11 @@ MVP 页面：
 MVP 功能：
 
 - 股票搜索
-- 自选股添加、删除、分组
+- 自选股添加、删除、分组（MVP 先使用浏览器 localStorage）
 - 个股行情与基础财务展示
 - 公司事件时间线
 - AI 快速分析
-- 研究笔记保存
+- 研究笔记保存（MVP 先使用浏览器 localStorage）
 - mock 数据完整演示
 
 暂不纳入 MVP 的功能：
@@ -137,7 +137,7 @@ UI 风格建议：
 - `catalysts`
 - `source_citations`
 
-MVP 阶段可以先使用本地 mock 数据或轻量数据库。只要接口形态稳定，后续迁移到 PostgreSQL 即可。
+MVP 阶段可以先使用本地 mock 数据和浏览器 localStorage。只要接口形态稳定，后续迁移到 PostgreSQL 即可。
 
 ### 3.4 缓存与任务
 

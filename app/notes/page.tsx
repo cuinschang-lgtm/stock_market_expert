@@ -1,5 +1,6 @@
 import { FileText, Plus } from "lucide-react";
 import Link from "next/link";
+import { LocalNotes } from "@/components/notes/local-notes";
 import { cnDateTime } from "@/lib/formatters";
 import { notes } from "@/server/market-data/mock-data";
 
@@ -11,7 +12,7 @@ export default function NotesPage() {
           <p className="text-sm font-semibold text-accent">Research Notes</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink">研究笔记</h1>
           <p className="mt-2 text-sm leading-6 text-muted">
-            用来保存 AI 分析、人工复盘和投资逻辑。MVP 先展示 mock 笔记，后续接数据库。
+            用来保存 AI 分析、人工复盘和投资逻辑。当前先支持浏览器本地保存，后续接数据库。
           </p>
         </div>
         <Link
@@ -22,6 +23,8 @@ export default function NotesPage() {
           从分析生成
         </Link>
       </section>
+
+      <LocalNotes />
 
       <section className="grid gap-4 md:grid-cols-2">
         {notes.map((note) => (
