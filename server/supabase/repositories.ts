@@ -1,4 +1,4 @@
-import type { AnalystReport, ResearchNote, QuoteSnapshot } from "@/lib/types";
+import type { AnalystReport, ResearchNote, QuoteSnapshot, UpdateResearchNoteInput } from "@/lib/types";
 import { DEFAULT_USER_ID, getSupabaseAdmin, isSupabaseConfigured } from "./client";
 
 export interface WatchlistRecord {
@@ -22,8 +22,11 @@ export interface NoteRecord {
   symbol: string | null;
   tag: string;
   excerpt: string;
+  body: string | null;
+  status: ResearchNote["status"];
   report: AnalystReport | null;
   created_at: string;
+  updated_at: string;
 }
 
 export function mapWatchlistRecord(record: WatchlistRecord) {
@@ -47,7 +50,10 @@ export function mapNoteRecord(record: NoteRecord): ResearchNote {
     symbol: record.symbol ?? undefined,
     tag: record.tag,
     excerpt: record.excerpt,
+    body: record.body,
+    status: record.status ?? "active",
     createdAt: record.created_at,
+    updatedAt: record.updated_at,
     report: record.report
   };
 }
@@ -161,6 +167,35 @@ export async function insertResearchNote(report: AnalystReport, userId = DEFAULT
 
   if (error) throw error;
   return { configured: true, note: mapNoteRecord(data as NoteRecord) };
+}
+
+export async function updateResearchNote(id: string, input: UpdateResearchNoteInput, userId = DEFAULT_USER_ID) {
+  if (!isSupabaseConfigured()) return { configured: false, note: null };
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false, note: null };
+
+  const patch: UpdateResearchNoteInput = {};
+  if (typeof input.title === "string") patch.title = input.title.trim();
+  if (typeof input.tag === "string") patch.tag = input.tag.trim();
+  if (typeof input.excerpt === "string") patch.excerpt = input.excerpt.trim();
+  if (typeof input.body === "string") patch.body = input.body.trim();
+  if (input.body === null) patch.body = null;
+  if (input.status === "active" || input.status === "archived") patch.status = input.status;
+
+  if (patch.title === "") throw new Error("title is required");
+  if (patch.tag === "") throw new Error("tag is required");
+  if (patch.excerpt === "") throw new Error("excerpt is required");
+
+  const { data, error } = await supabase
+    .from("research_notes")
+    .update(patch)
+    .eq("user_id", userId)
+    .eq("id", id)
+    .select("*")
+    .maybeSingle();
+
+  if (error) throw error;
+  return { configured: true, note: data ? mapNoteRecord(data as NoteRecord) : null };
 }
 
 export async function deleteResearchNote(id: string, userId = DEFAULT_USER_ID) {

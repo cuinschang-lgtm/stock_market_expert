@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Trash2 } from "lucide-react";
+import { Archive, CheckCircle2, FileText, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cnDateTime } from "@/lib/formatters";
@@ -62,9 +62,15 @@ export function LocalNotes() {
       {notes.map((note) => (
         <article key={note.id} className="rounded-lg border border-line bg-white p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent">
-              <FileText className="h-4 w-4" />
-              {note.tag}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent">
+                <FileText className="h-4 w-4" />
+                {note.tag}
+              </div>
+              <div className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 text-xs font-semibold text-muted">
+                {note.status === "archived" ? <Archive className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5 text-accent" />}
+                {note.status === "archived" ? "已归档" : "跟踪中"}
+              </div>
             </div>
             <button
               type="button"

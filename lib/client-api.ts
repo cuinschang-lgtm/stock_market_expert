@@ -1,4 +1,4 @@
-import type { AnalystReport, ResearchNote } from "@/lib/types";
+import type { AnalystReport, ResearchNote, UpdateResearchNoteInput } from "@/lib/types";
 import type { StoredWatchlistItem } from "@/lib/client-storage";
 
 async function readJson<T>(response: Response): Promise<T> {
@@ -43,6 +43,15 @@ export async function saveCloudReportNote(report: AnalystReport) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ report })
+  });
+  return readJson<{ configured: boolean; note: ResearchNote | null; error?: string }>(response);
+}
+
+export async function updateCloudNote(id: string, input: UpdateResearchNoteInput) {
+  const response = await fetch(`/api/notes/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
   });
   return readJson<{ configured: boolean; note: ResearchNote | null; error?: string }>(response);
 }

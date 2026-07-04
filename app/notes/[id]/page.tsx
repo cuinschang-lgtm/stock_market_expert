@@ -1,7 +1,8 @@
-import { ArrowLeft, CalendarDays, FileText, Link as LinkIcon } from "lucide-react";
+import { Archive, ArrowLeft, CalendarDays, CheckCircle2, FileText, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ReportView } from "@/components/analyst/report-view";
+import { NoteEditor } from "@/components/notes/note-editor";
 import { cnDateTime } from "@/lib/formatters";
 import { getResearchNote } from "@/server/supabase/repositories";
 
@@ -12,6 +13,7 @@ export default async function NoteDetailPage({ params }: { params: { id: string 
   if (!result.configured || !result.note) notFound();
 
   const note = result.note;
+  const archived = note.status === "archived";
 
   return (
     <div className="space-y-6">
@@ -27,6 +29,10 @@ export default async function NoteDetailPage({ params }: { params: { id: string 
               <FileText className="h-4 w-4" />
               {note.tag}
             </div>
+            <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted">
+              {archived ? <Archive className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4 text-accent" />}
+              {archived ? "已归档" : "跟踪中"}
+            </div>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">{note.title}</h1>
             <p className="mt-3 text-sm leading-6 text-muted">{note.excerpt}</p>
           </div>
@@ -35,6 +41,7 @@ export default async function NoteDetailPage({ params }: { params: { id: string 
               <CalendarDays className="h-4 w-4" />
               {cnDateTime(note.createdAt)}
             </div>
+            {note.updatedAt ? <div>更新 {cnDateTime(note.updatedAt)}</div> : null}
             {note.symbol ? (
               <Link
                 href={`/stocks/${note.symbol}`}
@@ -47,6 +54,8 @@ export default async function NoteDetailPage({ params }: { params: { id: string 
           </div>
         </div>
       </section>
+
+      <NoteEditor note={note} />
 
       {note.report ? (
         <ReportView report={note.report} />

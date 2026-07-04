@@ -23,16 +23,41 @@ create table if not exists public.research_notes (
   symbol text,
   tag text not null default 'AI 分析',
   excerpt text not null,
+  body text,
+  status text not null default 'active' check (status in ('active', 'archived')),
   report jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.research_notes
+  add column if not exists body text;
+
+alter table public.research_notes
+  add column if not exists status text not null default 'active';
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'research_notes_status_check'
+      and conrelid = 'public.research_notes'::regclass
+  ) then
+    alter table public.research_notes
+      add constraint research_notes_status_check
+      check (status in ('active', 'archived'));
+  end if;
+end $$;
 
 create index if not exists watchlist_items_user_created_idx
   on public.watchlist_items (user_id, created_at desc);
 
 create index if not exists research_notes_user_created_idx
   on public.research_notes (user_id, created_at desc);
+
+create index if not exists research_notes_user_status_created_idx
+  on public.research_notes (user_id, status, created_at desc);
 
 create or replace function public.set_updated_at()
 returns trigger as $$

@@ -73,6 +73,8 @@ export function saveReportAsNote(report: AnalystReport) {
     tag: "AI 分析",
     createdAt: new Date().toISOString(),
     excerpt: report.summary,
+    body: "",
+    status: "active",
     report
   };
   const next = [nextNote, ...existing];

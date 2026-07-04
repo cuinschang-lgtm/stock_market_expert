@@ -68,14 +68,27 @@ export interface WatchlistItem {
   addedAt: string;
 }
 
+export type ResearchNoteStatus = "active" | "archived";
+
 export interface ResearchNote {
   id: string;
   title: string;
   symbol?: string;
   tag: string;
   createdAt: string;
+  updatedAt?: string;
   excerpt: string;
+  body?: string | null;
+  status?: ResearchNoteStatus;
   report?: AnalystReport | null;
+}
+
+export interface UpdateResearchNoteInput {
+  title?: string;
+  tag?: string;
+  excerpt?: string;
+  body?: string | null;
+  status?: ResearchNoteStatus;
 }
 
 export interface MarketIndex {
