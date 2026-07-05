@@ -5,7 +5,8 @@ import {
   FileText,
   LayoutDashboard,
   Search,
-  Star
+  Star,
+  Target
 } from "lucide-react";
 import Link from "next/link";
 import { SearchBox } from "@/components/layout/search-box";
@@ -14,7 +15,8 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/watchlist", label: "自选股", icon: Star },
   { href: "/analyst", label: "AI Analyst", icon: Bot },
-  { href: "/notes", label: "研究笔记", icon: FileText }
+  { href: "/notes", label: "研究笔记", icon: FileText },
+  { href: "/theses", label: "投资逻辑", icon: Target }
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
