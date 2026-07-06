@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Search,
   Star,
+  ScrollText,
   Target
 } from "lucide-react";
 import Link from "next/link";
@@ -16,6 +17,7 @@ const navItems = [
   { href: "/watchlist", label: "自选股", icon: Star },
   { href: "/analyst", label: "AI Analyst", icon: Bot },
   { href: "/notes", label: "研究笔记", icon: FileText },
+  { href: "/reports", label: "报告中心", icon: ScrollText },
   { href: "/theses", label: "投资逻辑", icon: Target },
   { href: "/calendar", label: "复盘日历", icon: CalendarClock }
 ];
