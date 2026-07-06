@@ -16,7 +16,8 @@ const navItems = [
   { href: "/watchlist", label: "自选股", icon: Star },
   { href: "/analyst", label: "AI Analyst", icon: Bot },
   { href: "/notes", label: "研究笔记", icon: FileText },
-  { href: "/theses", label: "投资逻辑", icon: Target }
+  { href: "/theses", label: "投资逻辑", icon: Target },
+  { href: "/calendar", label: "复盘日历", icon: CalendarClock }
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
