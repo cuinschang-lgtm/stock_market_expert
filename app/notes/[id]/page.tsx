@@ -1,4 +1,4 @@
-import { Archive, ArrowLeft, CalendarDays, CheckCircle2, FileText, Link as LinkIcon } from "lucide-react";
+import { Archive, ArrowLeft, CalendarDays, CheckCircle2, FileDown, FileText, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ReportView } from "@/components/analyst/report-view";
@@ -24,7 +24,16 @@ export default async function NoteDetailPage({ params }: { params: { id: string 
           <ArrowLeft className="h-4 w-4" />
           返回研究笔记
         </Link>
-        <ReportExportAction note={note} />
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/notes/${note.id}/report`}
+            className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-panel"
+          >
+            <FileDown className="h-4 w-4" />
+            报告视图
+          </Link>
+          <ReportExportAction note={note} />
+        </div>
       </div>
 
       <section className="rounded-lg border border-line bg-white p-5 shadow-sm">

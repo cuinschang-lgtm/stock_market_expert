@@ -41,3 +41,29 @@ textarea {
 ::selection {
   background: rgba(0, 122, 108, 0.16);
 }
+
+@media print {
+  :root {
+    background: #ffffff;
+    color: #111827;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  .print-hidden,
+  aside,
+  header {
+    display: none !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  .lg\:pl-64 {
+    padding-left: 0 !important;
+  }
+}
