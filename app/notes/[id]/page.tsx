@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ReportView } from "@/components/analyst/report-view";
 import { NoteEditor } from "@/components/notes/note-editor";
+import { ReportExportAction } from "@/components/notes/report-export-action";
 import { ThesisTracker } from "@/components/notes/thesis-tracker";
 import { cnDateTime } from "@/lib/formatters";
 import { getResearchNote } from "@/server/supabase/repositories";
@@ -18,10 +19,13 @@ export default async function NoteDetailPage({ params }: { params: { id: string 
 
   return (
     <div className="space-y-6">
-      <Link href="/notes" className="inline-flex items-center gap-2 text-sm font-semibold text-accent hover:text-teal-800">
-        <ArrowLeft className="h-4 w-4" />
-        返回研究笔记
-      </Link>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Link href="/notes" className="inline-flex items-center gap-2 text-sm font-semibold text-accent hover:text-teal-800">
+          <ArrowLeft className="h-4 w-4" />
+          返回研究笔记
+        </Link>
+        <ReportExportAction note={note} />
+      </div>
 
       <section className="rounded-lg border border-line bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
