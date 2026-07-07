@@ -68,3 +68,53 @@ export async function generateStockFastReport(symbol: string): Promise<AnalystRe
     disclaimer: "本内容仅为信息整理与分析参考，不构成投资建议，投资有风险，决策需谨慎。"
   };
 }
+
+export async function generateSectorFastReport(sectorId: string): Promise<AnalystReport> {
+  const provider = getMarketDataProvider();
+  const sector = await provider.getSectorOverview(sectorId);
+  const leaderQuotes = await Promise.all(sector.leaders.map((leader) => provider.getQuote(leader.symbol)));
+  const generatedAt = new Date().toISOString();
+  const leaderNames = leaderQuotes.map((quote) => `${quote.name}(${quote.symbol})`).join("、");
+  const positiveLeaders = leaderQuotes.filter((quote) => quote.weekChangePercent >= 0).length;
+
+  return {
+    id: `sector-${sector.id}-${Date.now()}`,
+    intent: "sector_analysis",
+    target: sector.name,
+    generatedAt,
+    summary: `${sector.name}适合用“产业趋势 + 龙头验证 + 风险边界”三层框架跟踪；当前样本龙头中 ${positiveLeaders}/${leaderQuotes.length} 个近 7 日为正收益，仅作为研究线索。`,
+    sections: [
+      {
+        title: "主题定位",
+        points: [
+          sector.description,
+          `代表标的样本：${leaderNames}。样本用于观察产业变量，不代表覆盖完整行业。`,
+          "当前页面沿用 MarketDataProvider，后续接入真实数据源时保留同一输出结构。"
+        ]
+      },
+      {
+        title: "跟踪变量",
+        points: sector.trends
+      },
+      {
+        title: "代表标的观察",
+        points: leaderQuotes.map((quote) => {
+          return `${quote.name}：最新价 ${quote.currency} ${quote.price.toFixed(2)}，近 7 日 ${quote.weekChangePercent.toFixed(2)}%，PE-TTM ${quote.peTtm.toFixed(1)}。`;
+        })
+      },
+      {
+        title: "风险提示",
+        points: [
+          ...sector.risks,
+          "主题热度不等于投资价值，需要回到业绩、估值、现金流和事件验证。",
+          "AI 分析仅整理变量和风险，不构成买卖建议。"
+        ]
+      }
+    ],
+    sources: [
+      { label: "MockMarketDataProvider: sector_overview", timestamp: generatedAt },
+      ...leaderQuotes.map((quote) => ({ label: `MockMarketDataProvider: quote:${quote.symbol}`, timestamp: quote.updatedAt }))
+    ],
+    disclaimer: "本内容仅为信息整理与分析参考，不构成投资建议，投资有风险，决策需谨慎。"
+  };
+}

@@ -155,6 +155,7 @@ export interface MarketDataProvider {
   getKline(symbol: string): Promise<KlinePoint[]>;
   getFinancials(symbol: string): Promise<FinancialSnapshot[]>;
   getCompanyEvents(symbol: string): Promise<CompanyEvent[]>;
+  listSectorOverviews(): Promise<SectorOverview[]>;
   getSectorOverview(sectorId: string): Promise<SectorOverview>;
   getDashboardData(): Promise<DashboardData>;
 }

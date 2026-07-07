@@ -68,7 +68,9 @@ export default async function DashboardPage() {
               <div key={sector.name} className="rounded-lg border border-line bg-white p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-semibold text-ink">{sector.name}</div>
+                    <Link href="/sectors" className="font-semibold text-ink hover:text-accent">
+                      {sector.name}
+                    </Link>
                     <div className="mt-1 text-sm text-muted">{sector.reason}</div>
                   </div>
                   <div className={`font-semibold ${trendClass(sector.changePercent)}`}>

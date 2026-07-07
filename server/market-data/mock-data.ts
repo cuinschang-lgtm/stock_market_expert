@@ -416,6 +416,46 @@ export const sectors: Record<string, SectorOverview> = {
     leaders: [symbols[0], symbols[1], symbols[4]],
     trends: ["股东回报成为估值锚", "消费复苏节奏仍偏温和", "高端品牌更看重价格体系稳定"],
     risks: ["宏观消费疲弱", "渠道库存扰动", "估值修复缺少明确催化"]
+  },
+  internet: {
+    id: "internet",
+    name: "互联网平台",
+    description: "围绕游戏、广告、金融科技、云服务和股东回报的港股平台经济研究主题。",
+    leaders: [symbols[1]],
+    trends: ["回购提升每股收益弹性", "视频号和广告商业化仍是收入质量观察点", "游戏供给节奏趋于平稳"],
+    risks: ["广告需求受宏观消费影响", "监管政策和平台竞争变化", "云业务价格竞争压制利润率"]
+  },
+  semiconductors: {
+    id: "semiconductors",
+    name: "半导体",
+    description: "覆盖 AI 芯片、先进封装、存储和设备国产化的高波动科技主题。",
+    leaders: [symbols[2]],
+    trends: ["AI 加速卡需求仍是核心景气线索", "先进封装产能成为供应约束", "国产替代链条关注订单验证"],
+    risks: ["估值提前反映高增长", "周期品价格波动", "出口限制和供应链扰动"]
+  },
+  newEnergy: {
+    id: "newEnergy",
+    name: "新能源车链",
+    description: "覆盖动力电池、整车、材料和海外产能的制造业主题。",
+    leaders: [symbols[3]],
+    trends: ["动力电池排产边际改善", "海外产能贡献中长期增量", "储能需求提供第二增长曲线"],
+    risks: ["产业链价格竞争", "海外贸易政策变化", "产能扩张后盈利弹性不确定"]
+  },
+  baijiu: {
+    id: "baijiu",
+    name: "白酒",
+    description: "围绕高端酒批价、渠道库存、现金流和分红能力的消费资产主题。",
+    leaders: [symbols[0]],
+    trends: ["核心单品批价企稳是估值修复前提", "分红和现金流提供防御属性", "宴席和商务需求恢复节奏需跟踪"],
+    risks: ["渠道库存去化慢于预期", "消费升级动力不足", "高端价格体系波动"]
+  },
+  devices: {
+    id: "devices",
+    name: "消费电子",
+    description: "覆盖端侧 AI、硬件换机周期、服务收入和供应链利润分配的全球消费科技主题。",
+    leaders: [symbols[4]],
+    trends: ["端侧 AI 功能进入产品验证期", "服务业务占比提升改善利润结构", "硬件换机周期需要销量数据确认"],
+    risks: ["硬件创新不及预期", "供应链成本波动", "监管和生态抽佣政策变化"]
   }
 };
 

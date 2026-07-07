@@ -49,6 +49,10 @@ class MockMarketDataProvider implements MarketDataProvider {
     return events[ensureSymbol(symbol)];
   }
 
+  async listSectorOverviews(): Promise<SectorOverview[]> {
+    return Object.values(sectors);
+  }
+
   async getSectorOverview(sectorId: string): Promise<SectorOverview> {
     const sector = sectors[sectorId] ?? sectors.ai;
     return sector;
