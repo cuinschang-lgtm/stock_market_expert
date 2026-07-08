@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from "next/cache";
 import type { AnalystReport, InvestmentThesis, ResearchNote, QuoteSnapshot, UpdateResearchNoteInput } from "@/lib/types";
 import { DEFAULT_USER_ID, getSupabaseAdmin, isSupabaseConfigured } from "./client";
 
@@ -87,6 +88,7 @@ function normalizeThesis(thesis: InvestmentThesis): InvestmentThesis {
 }
 
 export async function listWatchlistItems(userId = DEFAULT_USER_ID) {
+  noStore();
   if (!isSupabaseConfigured()) return { configured: false, items: [] };
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false, items: [] };
@@ -102,6 +104,7 @@ export async function listWatchlistItems(userId = DEFAULT_USER_ID) {
 }
 
 export async function upsertWatchlistItem(quote: QuoteSnapshot, userId = DEFAULT_USER_ID) {
+  noStore();
   if (!isSupabaseConfigured()) return { configured: false, item: null };
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false, item: null };
@@ -130,6 +133,7 @@ export async function upsertWatchlistItem(quote: QuoteSnapshot, userId = DEFAULT
 }
 
 export async function deleteWatchlistItem(symbol: string, userId = DEFAULT_USER_ID) {
+  noStore();
   if (!isSupabaseConfigured()) return { configured: false };
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false };
@@ -145,6 +149,7 @@ export async function deleteWatchlistItem(symbol: string, userId = DEFAULT_USER_
 }
 
 export async function listResearchNotes(userId = DEFAULT_USER_ID) {
+  noStore();
   if (!isSupabaseConfigured()) return { configured: false, notes: [] };
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false, notes: [] };
@@ -160,6 +165,7 @@ export async function listResearchNotes(userId = DEFAULT_USER_ID) {
 }
 
 export async function getResearchNote(id: string, userId = DEFAULT_USER_ID) {
+  noStore();
   if (!isSupabaseConfigured()) return { configured: false, note: null };
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false, note: null };
@@ -176,6 +182,7 @@ export async function getResearchNote(id: string, userId = DEFAULT_USER_ID) {
 }
 
 export async function insertResearchNote(report: AnalystReport, userId = DEFAULT_USER_ID) {
+  noStore();
   if (!isSupabaseConfigured()) return { configured: false, note: null };
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false, note: null };
@@ -198,6 +205,7 @@ export async function insertResearchNote(report: AnalystReport, userId = DEFAULT
 }
 
 export async function updateResearchNote(id: string, input: UpdateResearchNoteInput, userId = DEFAULT_USER_ID) {
+  noStore();
   if (!isSupabaseConfigured()) return { configured: false, note: null };
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false, note: null };
@@ -232,6 +240,7 @@ export async function updateResearchNote(id: string, input: UpdateResearchNoteIn
 }
 
 export async function deleteResearchNote(id: string, userId = DEFAULT_USER_ID) {
+  noStore();
   if (!isSupabaseConfigured()) return { configured: false };
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false };

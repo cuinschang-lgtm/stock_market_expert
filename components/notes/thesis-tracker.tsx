@@ -23,6 +23,10 @@ function textToList(value: string) {
     .filter(Boolean);
 }
 
+function sameList(left: string[], right: string[]) {
+  return left.length === right.length && left.every((item, index) => item === right[index]);
+}
+
 function defaultHypothesis(note: ResearchNote) {
   if (note.thesis?.coreHypothesis) return note.thesis.coreHypothesis;
   return note.excerpt;
@@ -51,7 +55,24 @@ export function ThesisTracker({ note }: { note: ResearchNote }) {
         conviction,
         nextReviewAt: nextReviewAt || undefined
       };
-      await updateCloudNote(note.id, { thesis });
+      const result = await updateCloudNote(note.id, { thesis });
+      if (result.configured) {
+        if (!result.note?.thesis) {
+          throw new Error("保存未写入，请重试");
+        }
+        const saved = result.note.thesis;
+        const expectedCore = thesis.coreHypothesis.trim();
+        if (
+          saved.coreHypothesis !== expectedCore ||
+          saved.conviction !== thesis.conviction ||
+          (saved.nextReviewAt ?? "") !== (thesis.nextReviewAt ?? "") ||
+          !sameList(saved.keyMetrics, thesis.keyMetrics) ||
+          !sameList(saved.catalysts, thesis.catalysts) ||
+          !sameList(saved.invalidationSignals, thesis.invalidationSignals)
+        ) {
+          throw new Error("保存未写入，请重试");
+        }
+      }
       setMessage("已保存");
       router.refresh();
     } catch (error) {

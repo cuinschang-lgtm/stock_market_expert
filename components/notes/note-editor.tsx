@@ -11,6 +11,10 @@ const statusCopy: Record<ResearchNoteStatus, string> = {
   archived: "已归档"
 };
 
+function clean(value: string) {
+  return value.trim();
+}
+
 export function NoteEditor({ note }: { note: ResearchNote }) {
   const router = useRouter();
   const [title, setTitle] = useState(note.title);
@@ -25,7 +29,24 @@ export function NoteEditor({ note }: { note: ResearchNote }) {
     setSaving(true);
     setMessage(null);
     try {
-      await updateCloudNote(note.id, { title, tag, excerpt, body, status });
+      const result = await updateCloudNote(note.id, { title, tag, excerpt, body, status });
+      if (result.configured) {
+        if (!result.note) {
+          throw new Error("保存未写入，请重试");
+        }
+        const saved = result.note;
+        const expectedBody = clean(body);
+        const bodyMatched = expectedBody.length === 0 ? !saved.body : saved.body === expectedBody;
+        if (
+          saved.title !== clean(title) ||
+          saved.tag !== clean(tag) ||
+          saved.excerpt !== clean(excerpt) ||
+          saved.status !== status ||
+          !bodyMatched
+        ) {
+          throw new Error("保存未写入，请重试");
+        }
+      }
       setMessage("已保存");
       router.refresh();
     } catch (error) {
