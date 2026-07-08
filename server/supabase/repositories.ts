@@ -30,6 +30,16 @@ export interface NoteRecord {
   updated_at: string;
 }
 
+interface NoteUpdateRecord {
+  title?: string;
+  tag?: string;
+  excerpt?: string;
+  body?: string | null;
+  status?: ResearchNote["status"];
+  thesis?: InvestmentThesis | null;
+  updated_at: string;
+}
+
 export function mapWatchlistRecord(record: WatchlistRecord) {
   return {
     id: record.id,
@@ -192,7 +202,9 @@ export async function updateResearchNote(id: string, input: UpdateResearchNoteIn
   const supabase = getSupabaseAdmin();
   if (!supabase) return { configured: false, note: null };
 
-  const patch: UpdateResearchNoteInput = {};
+  const patch: NoteUpdateRecord = {
+    updated_at: new Date().toISOString()
+  };
   if (typeof input.title === "string") patch.title = input.title.trim();
   if (typeof input.tag === "string") patch.tag = input.tag.trim();
   if (typeof input.excerpt === "string") patch.excerpt = input.excerpt.trim();
