@@ -25,7 +25,7 @@ export async function addCloudWatchlistItem(symbol: string) {
 
 export async function deleteCloudWatchlistItem(symbol: string) {
   const response = await fetch(`/api/watchlist/${encodeURIComponent(symbol)}`, { method: "DELETE" });
-  return readJson<{ configured: boolean; error?: string }>(response);
+  return readJson<{ configured: boolean; deleted?: boolean; symbol?: string; error?: string }>(response);
 }
 
 export async function fetchCloudNotes() {

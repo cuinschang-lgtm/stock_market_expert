@@ -134,18 +134,19 @@ export async function upsertWatchlistItem(quote: QuoteSnapshot, userId = DEFAULT
 
 export async function deleteWatchlistItem(symbol: string, userId = DEFAULT_USER_ID) {
   noStore();
-  if (!isSupabaseConfigured()) return { configured: false };
+  if (!isSupabaseConfigured()) return { configured: false, deleted: false };
   const supabase = getSupabaseAdmin();
-  if (!supabase) return { configured: false };
+  if (!supabase) return { configured: false, deleted: false };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("watchlist_items")
     .delete()
     .eq("user_id", userId)
-    .eq("symbol", symbol);
+    .eq("symbol", symbol)
+    .select("symbol");
 
   if (error) throw error;
-  return { configured: true };
+  return { configured: true, deleted: (data ?? []).length > 0, symbol };
 }
 
 export async function listResearchNotes(userId = DEFAULT_USER_ID) {

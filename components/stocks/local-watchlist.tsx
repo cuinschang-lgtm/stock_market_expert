@@ -10,10 +10,12 @@ import { deleteCloudWatchlistItem, fetchCloudWatchlist } from "@/lib/client-api"
 export function LocalWatchlist() {
   const [items, setItems] = useState<StoredWatchlistItem[]>([]);
   const [source, setSource] = useState<"local" | "cloud">("local");
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     async function load() {
+      setMessage(null);
       try {
         const result = await fetchCloudWatchlist();
         if (active && result.configured) {
@@ -36,9 +38,14 @@ export function LocalWatchlist() {
   }, []);
 
   async function remove(symbol: string) {
+    setMessage(null);
     if (source === "cloud") {
       try {
-        await deleteCloudWatchlistItem(symbol);
+        const result = await deleteCloudWatchlistItem(symbol);
+        if (result.configured && !result.deleted) {
+          setMessage("云端删除未确认，请刷新后重试");
+          return;
+        }
         setItems((current) => current.filter((item) => item.symbol !== symbol));
         return;
       } catch {
@@ -59,7 +66,8 @@ export function LocalWatchlist() {
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-white">
       <div className="border-b border-line bg-panel px-4 py-3 text-sm font-semibold text-ink">
-        {source === "cloud" ? "我的云端自选" : "我的本地自选"}
+        <div>{source === "cloud" ? "我的云端自选" : "我的本地自选"}</div>
+        {message ? <div className="mt-1 text-xs text-danger">{message}</div> : null}
       </div>
       <div className="divide-y divide-line">
         {items.map((item) => (
