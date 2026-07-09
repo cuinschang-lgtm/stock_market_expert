@@ -10,12 +10,21 @@ import type {
 } from "@/lib/types";
 import { dashboard, events, financials, klines, quotes, sectors, symbols } from "./mock-data";
 
+// 常见的用户输入别名 → 真实 symbol
+const SYMBOL_ALIASES: Record<string, string> = {
+  "sh300750": "sz300750", // 用户习惯写 sh + 代码
+  "sh00700": "hk00700",
+  "sh0700": "hk00700",
+  "sh07000": "hk00700",
+};
+
 function ensureSymbol(symbol: string) {
   const normalized = symbol.trim();
-  if (!quotes[normalized]) {
+  const resolved = SYMBOL_ALIASES[normalized] ?? normalized;
+  if (!quotes[resolved]) {
     throw new Error(`Unknown symbol: ${symbol}`);
   }
-  return normalized;
+  return resolved;
 }
 
 class MockMarketDataProvider implements MarketDataProvider {
