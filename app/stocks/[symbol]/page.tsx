@@ -11,16 +11,18 @@ import { getMarketDataProvider } from "@/server/market-data/provider";
 export default async function StockDetailPage({ params }: { params: { symbol: string } }) {
   const provider = getMarketDataProvider();
   const symbol = decodeURIComponent(params.symbol);
-  const data = await Promise.all([
-    provider.getQuote(symbol),
-    provider.getKline(symbol),
-    provider.getFinancials(symbol),
-    provider.getCompanyEvents(symbol),
-  ]).catch(() => null);
 
-  if (!data) notFound();
+  // 逐个安全获取，任一失败不准带崩整页
+  const [quote, kline, financials, events] = await Promise.all([
+    provider.getQuote(symbol).catch(() => null),
+    provider.getKline(symbol).catch(() => []),
+    provider.getFinancials(symbol).catch(() => []),
+    provider.getCompanyEvents(symbol).catch(() => []),
+  ]);
 
-  const [quote, kline, financials, events] = data;
+  if (!quote) notFound();
+
+  const hasLiveData = quote.price > 0;
   const latest = financials[0];
 
   return (
@@ -55,6 +57,12 @@ export default async function StockDetailPage({ params }: { params: { symbol: st
           </div>
         </div>
       </section>
+
+      {!hasLiveData && (
+        <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          实时行情暂时不可用（数据源未连接），以下展示为本地缓存数据。AI 分析功能不受影响。
+        </section>
+      )}
 
       <section className="grid gap-4 md:grid-cols-4">
         <MetricCard label="PE-TTM" value={quote.peTtm.toFixed(1)} detail="估值倍数" />

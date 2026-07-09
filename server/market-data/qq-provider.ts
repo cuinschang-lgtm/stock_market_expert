@@ -38,15 +38,19 @@ function directGet(url: string, timeoutMs = 10000): Promise<{ buffer: Buffer; st
 async function httpGet(url: string): Promise<{ buffer: Buffer; statusCode: number }> {
   // Vercel 生产环境优先用 fetch
   if (process.env.VERCEL) {
+    // Vercel 美国节点无法访问中国 API，直接快速失败
     try {
-      const res = await fetch(url, { cache: "no-store" });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(url, { cache: "no-store", signal: controller.signal });
+      clearTimeout(timer);
       const buf = Buffer.from(await res.arrayBuffer());
       return { buffer: buf, statusCode: res.status };
     } catch {
-      // fall through to directGet
+      throw new Error("VERCEL_SKIP");
     }
   }
-  return directGet(url, 6000); // 6s 短超时，Vercel 美国节点访问中国 API 大概率失败
+  return directGet(url, 6000);
 }
 
 import type {

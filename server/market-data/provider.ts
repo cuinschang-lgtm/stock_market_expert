@@ -1,4 +1,4 @@
-import type { MarketDataProvider } from "@/lib/types";
+import type { Market, MarketDataProvider, QuoteSnapshot } from "@/lib/types";
 import { ChinaDataProvider } from "./qq-provider";
 
 // Mock provider as fallback
@@ -16,10 +16,42 @@ import type {
   DashboardData,
   FinancialSnapshot,
   KlinePoint,
-  QuoteSnapshot,
   SectorOverview,
   SymbolSearchResult,
 } from "@/lib/types";
+
+// ---------- 占位行情（用于超时/不可达时的安全兜底）----------
+
+function placeholderQuote(symbol: string): QuoteSnapshot {
+  const market = (
+    symbol.startsWith("sh") || symbol.startsWith("sz") ? "A股" :
+    symbol.startsWith("hk") ? "港股" : "美股"
+  ) as Market;
+  const currency = market === "港股" ? "HKD" : market === "美股" ? "USD" : "CNY";
+  return {
+    symbol,
+    name: symbol,
+    market,
+    exchange: "",
+    sector: "",
+    currency,
+    price: 0,
+    change: 0,
+    changePercent: 0,
+    volume: "",
+    turnover: "—",
+    peTtm: 0,
+    pb: 0,
+    ps: 0,
+    dividendYield: 0,
+    weekChangePercent: 0,
+    yearHigh: 0,
+    yearLow: 0,
+    updatedAt: new Date().toISOString().slice(0, 10),
+  };
+}
+
+// ---------- Mock ----------
 
 const SYMBOL_ALIASES: Record<string, string> = {
   sh300750: "sz300750",
@@ -31,96 +63,88 @@ const SYMBOL_ALIASES: Record<string, string> = {
 function ensureSymbol(symbol: string) {
   const normalized = symbol.trim();
   const resolved = SYMBOL_ALIASES[normalized] ?? normalized;
-  if (!quotes[resolved]) {
-    throw new Error(`Unknown symbol: ${symbol}`);
-  }
+  if (!quotes[resolved]) throw new Error(`Unknown symbol: ${symbol}`);
   return resolved;
 }
 
 class MockMarketDataProvider implements MarketDataProvider {
   async searchSymbols(query: string): Promise<SymbolSearchResult[]> {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) return symbols;
+    const q = query.trim().toLowerCase();
+    if (!q) return symbols;
     return symbols.filter(
-      (item) =>
-        item.symbol.toLowerCase().includes(normalized) ||
-        item.name.toLowerCase().includes(normalized) ||
-        item.sector.toLowerCase().includes(normalized) ||
-        item.market.toLowerCase().includes(normalized)
+      (s) =>
+        s.symbol.toLowerCase().includes(q) ||
+        s.name.toLowerCase().includes(q) ||
+        s.sector.toLowerCase().includes(q) ||
+        s.market.toLowerCase().includes(q),
     );
   }
-  async getQuote(symbol: string): Promise<QuoteSnapshot> {
-    return quotes[ensureSymbol(symbol)];
-  }
-  async getKline(symbol: string): Promise<KlinePoint[]> {
-    return klines[ensureSymbol(symbol)];
-  }
-  async getFinancials(symbol: string): Promise<FinancialSnapshot[]> {
-    return financials[ensureSymbol(symbol)];
-  }
-  async getCompanyEvents(symbol: string): Promise<CompanyEvent[]> {
-    return events[ensureSymbol(symbol)];
-  }
-  async listSectorOverviews(): Promise<SectorOverview[]> {
-    return Object.values(sectors);
-  }
-  async getSectorOverview(sectorId: string): Promise<SectorOverview> {
-    return sectors[sectorId] ?? sectors.ai!;
-  }
-  async getDashboardData(): Promise<DashboardData> {
-    return dashboard;
-  }
+  async getQuote(symbol: string)            { return quotes[ensureSymbol(symbol)]; }
+  async getKline(symbol: string)            { return klines[ensureSymbol(symbol)]; }
+  async getFinancials(symbol: string)       { return financials[ensureSymbol(symbol)]; }
+  async getCompanyEvents(symbol: string)    { return events[ensureSymbol(symbol)]; }
+  async listSectorOverviews()               { return Object.values(sectors); }
+  async getSectorOverview(id: string)       { return sectors[id] ?? sectors.ai!; }
+  async getDashboardData()                  { return dashboard; }
 }
 
-/**
- * 8 秒超时包装器 —— 防止 Vercel Hobby (10s 限制) 卡死
- */
+// ---------- Timeout wrapper (永远不抛，安全兜底) ----------
+
+const IS_VERCEL = !!process.env.VERCEL;
+const QUOTE_TIMEOUT = IS_VERCEL ? 4000 : 8000;   // Vercel 美国节点，4s 就够了
+const DATA_TIMEOUT  = IS_VERCEL ? 3000 : 6000;
+
 class TimeoutProvider implements MarketDataProvider {
-  constructor(private inner: MarketDataProvider, private timeoutMs = 8000) {}
+  constructor(private inner: MarketDataProvider) {}
 
-  private async withTimeout<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
-    try {
-      return await Promise.race([
-        fn(),
-        new Promise<T>((_, reject) =>
-          setTimeout(() => reject(new Error("TIMEOUT")), this.timeoutMs)
-        ),
-      ]);
-    } catch {
-      return fallback;
-    }
+  private race<T>(ms: number, fn: () => Promise<T>, fallback: T): Promise<T> {
+    return Promise.race([
+      fn(),
+      new Promise<T>((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), ms)),
+    ]).catch(() => fallback);
   }
 
-  async searchSymbols(query: string): Promise<SymbolSearchResult[]> {
-    return this.withTimeout(() => this.inner.searchSymbols(query), []);
-  }
+  // ---- 核心：getQuote 永不抛 ----
   async getQuote(symbol: string): Promise<QuoteSnapshot> {
-    // 不在 mock 中的股票，用 5s 短超时 + 回退
-    const result = await this.withTimeout(() => this.inner.getQuote(symbol), null as unknown as QuoteSnapshot);
-    if (result) return result;
-    // 回退到 mock
-    if (quotes[symbol]) return quotes[symbol];
-    throw new Error(`Unknown symbol: ${symbol}`);
+    const result = await this.race(
+      QUOTE_TIMEOUT,
+      () => this.inner.getQuote(symbol),
+      null as unknown as QuoteSnapshot,
+    );
+    if (result?.price && result.price > 0) return result;
+    // 回退 mock（含 PE/PB 等估值数据的 5 只预设股票）
+    if (quotes[symbol]) return quotes[symbol]!;
+    // 非预设股票：返回占位行情，页面仍可安全渲染
+    return placeholderQuote(symbol);
+  }
+
+  async searchSymbols(q: string): Promise<SymbolSearchResult[]> {
+    return this.race(DATA_TIMEOUT, () => this.inner.searchSymbols(q), []);
   }
   async getKline(symbol: string): Promise<KlinePoint[]> {
-    return this.withTimeout(() => this.inner.getKline(symbol), []);
+    const r = await this.race(DATA_TIMEOUT, () => this.inner.getKline(symbol), [] as KlinePoint[]);
+    return r.length > 0 ? r : (klines[symbol] ?? []);
   }
   async getFinancials(symbol: string): Promise<FinancialSnapshot[]> {
-    return this.withTimeout(() => this.inner.getFinancials(symbol), []);
+    const r = await this.race(DATA_TIMEOUT, () => this.inner.getFinancials(symbol), [] as FinancialSnapshot[]);
+    return r.length > 0 ? r : (financials[symbol] ?? []);
   }
   async getCompanyEvents(symbol: string): Promise<CompanyEvent[]> {
-    return this.withTimeout(() => this.inner.getCompanyEvents(symbol), []);
+    const r = await this.race(DATA_TIMEOUT, () => this.inner.getCompanyEvents(symbol), [] as CompanyEvent[]);
+    return r.length > 0 ? r : (events[symbol] ?? []);
   }
   async listSectorOverviews(): Promise<SectorOverview[]> {
-    return this.withTimeout(() => this.inner.listSectorOverviews(), Object.values(sectors));
+    return this.race(DATA_TIMEOUT, () => this.inner.listSectorOverviews(), Object.values(sectors));
   }
-  async getSectorOverview(sectorId: string): Promise<SectorOverview> {
-    return this.withTimeout(() => this.inner.getSectorOverview(sectorId), sectors.ai!);
+  async getSectorOverview(id: string): Promise<SectorOverview> {
+    return this.race(DATA_TIMEOUT, () => this.inner.getSectorOverview(id), sectors.ai!);
   }
   async getDashboardData(): Promise<DashboardData> {
-    return this.withTimeout(() => this.inner.getDashboardData(), dashboard);
+    return this.race(DATA_TIMEOUT, () => this.inner.getDashboardData(), dashboard);
   }
 }
+
+// ---------- 导出 ----------
 
 let _provider: MarketDataProvider | null = null;
 
@@ -145,8 +169,7 @@ export function getMarketDataProvider(): MarketDataProvider {
       default:
         inner = new ChinaDataProvider();
     }
-    // 统一包 8s 超时，防止卡 Vercel 10s 限制
-    _provider = new TimeoutProvider(inner, 8000);
+    _provider = new TimeoutProvider(inner);
   }
   return _provider!;
 }
