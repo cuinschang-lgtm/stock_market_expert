@@ -1,5 +1,5 @@
 import type { MarketDataProvider } from "@/lib/types";
-import { YahooFinanceProvider } from "./yahoo-provider";
+import { ChinaDataProvider } from "./qq-provider";
 
 // Mock provider 作为兜底
 import {
@@ -21,7 +21,6 @@ import type {
   SymbolSearchResult,
 } from "@/lib/types";
 
-// 常见的用户输入别名 → 真实 symbol
 const SYMBOL_ALIASES: Record<string, string> = {
   sh300750: "sz300750",
   sh00700: "hk00700",
@@ -77,11 +76,25 @@ let _provider: MarketDataProvider | null = null;
 
 export function getMarketDataProvider(): MarketDataProvider {
   if (!_provider) {
-    // DATA_SOURCE=yahoo 则用 Yahoo Finance 实时数据，否则用本地 mock
-    _provider =
-      process.env.DATA_SOURCE === "yahoo"
-        ? new YahooFinanceProvider()
-        : new MockMarketDataProvider();
+    const src = process.env.DATA_SOURCE ?? "qq";
+    switch (src) {
+      case "mock":
+        _provider = new MockMarketDataProvider();
+        break;
+      case "yahoo":
+        // 尝试加载 Yahoo provider（如未安装则回退 qq）
+        try {
+          const { YahooFinanceProvider } = require("./yahoo-provider");
+          _provider = new YahooFinanceProvider();
+        } catch {
+          console.warn("[provider] Yahoo module not available, falling back to qq");
+          _provider = new ChinaDataProvider();
+        }
+        break;
+      case "qq":
+      default:
+        _provider = new ChinaDataProvider();
+    }
   }
-  return _provider;
+  return _provider!;
 }
