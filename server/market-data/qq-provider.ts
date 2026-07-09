@@ -234,6 +234,49 @@ interface QQQuoteRaw {
   updatedAt: string;
 }
 
+function normalizeUpdatedAt(raw: string | undefined): string {
+  const now = new Date().toISOString();
+  if (!raw) return now;
+  const s = String(raw).trim();
+  if (!s) return now;
+
+  // A股常见: 20260709112806 (YYYYMMDDHHmmss)
+  if (/^\d{14}$/.test(s)) {
+    const y = s.slice(0, 4);
+    const m = s.slice(4, 6);
+    const d = s.slice(6, 8);
+    const hh = s.slice(8, 10);
+    const mm = s.slice(10, 12);
+    const ss = s.slice(12, 14);
+    return `${y}-${m}-${d}T${hh}:${mm}:${ss}+08:00`;
+  }
+
+  // 仅日期: 20260709 (YYYYMMDD)
+  if (/^\d{8}$/.test(s)) {
+    const y = s.slice(0, 4);
+    const m = s.slice(4, 6);
+    const d = s.slice(6, 8);
+    return `${y}-${m}-${d}T00:00:00+08:00`;
+  }
+
+  // 港股常见: 2026/07/09 11:07 或 2026/07/09 11:07:03
+  if (/^\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}/.test(s)) {
+    const fixed = s.replaceAll("/", "-").replace(" ", "T");
+    const withSeconds = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(fixed) ? `${fixed}:00` : fixed;
+    return `${withSeconds}+08:00`;
+  }
+
+  // 美股常见: 2026-07-08 16:00:01
+  if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/.test(s)) {
+    return s.replace(" ", "T");
+  }
+
+  // 兜底：尽量让 new Date() 可解析；不可解析则回退 now
+  const parsed = new Date(s);
+  if (Number.isNaN(parsed.getTime())) return now;
+  return parsed.toISOString();
+}
+
 /**
  * 请求腾讯财经实时行情
  * 格式: v_{ticker}="序号~名称~代码~最新价~昨收~今开~成交量~..."
@@ -273,7 +316,7 @@ async function fetchQQQuotes(tickers: string[]): Promise<Map<string, QQQuoteRaw>
         ytdHigh:         parseFloat(fields[41] ?? "0"),    // 52周高
         ytdLow:          parseFloat(fields[42] ?? "0"),    // 52周低
         currency:        fields[47] ?? "CNY",              // 货币
-        updatedAt:       fields[30]?.slice(0, 10) ?? "",   // 日期
+        updatedAt:       normalizeUpdatedAt(fields[30]),   // 统一为可解析时间串（给 cnDateTime 用）
       };
       result.set(ticker, parsed);
     }

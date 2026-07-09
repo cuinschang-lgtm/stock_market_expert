@@ -17,12 +17,16 @@ export function formatCurrency(value: number, currency: string) {
 }
 
 export function cnDateTime(value: string) {
+  const date = new Date(value);
+  // 避免 RangeError: Invalid time value（例如 value 不是可解析日期）
+  if (Number.isNaN(date.getTime())) return value;
+
   return new Intl.DateTimeFormat("zh-CN", {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit"
-  }).format(new Date(value));
+  }).format(date);
 }
 
 export function trendClass(value: number) {
