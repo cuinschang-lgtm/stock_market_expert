@@ -1,11 +1,9 @@
 import { ArrowRight, Bot, CheckCircle2, Lightbulb, Network, ShieldAlert } from "lucide-react";
 import Link from "next/link";
-import { ReportView } from "@/components/analyst/report-view";
-import { SaveReportAction } from "@/components/analyst/save-report-action";
+import { InlineReport } from "@/components/analyst/inline-report";
 import { QuoteTable } from "@/components/stocks/quote-table";
 import { MetricCard } from "@/components/ui/metric-card";
 import { formatSignedPercent } from "@/lib/formatters";
-import { generateSectorFastReport } from "@/server/analyst/report";
 import { getSectorResearchDetail, sectorMomentumTone } from "@/server/sector-research";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +11,6 @@ export const dynamic = "force-dynamic";
 export default async function SectorDetailPage({ params }: { params: { id: string } }) {
   const sectorId = decodeURIComponent(params.id);
   const detail = await getSectorResearchDetail(sectorId);
-  const report = await generateSectorFastReport(sectorId);
 
   return (
     <div className="space-y-6">
@@ -136,19 +133,11 @@ export default async function SectorDetailPage({ params }: { params: { id: strin
         </div>
       </section>
 
-      <ReportView report={report} />
-
-      <section className="rounded-lg border border-line bg-panel p-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="text-sm font-semibold text-ink">保存主题分析</div>
-            <p className="mt-1 text-sm text-muted">
-              保存后会进入研究笔记，可继续补充投资逻辑、复盘日期和导出报告。
-            </p>
-          </div>
-          <SaveReportAction report={report} />
-        </div>
-      </section>
+      {/* AI 专题分析：客户端异步加载 */}
+      <InlineReport
+        apiPath={`/api/sectors/${encodeURIComponent(sectorId)}`}
+        loadingLabel={`AI 正在生成 ${detail.sector.name} 专题分析...`}
+      />
     </div>
   );
 }

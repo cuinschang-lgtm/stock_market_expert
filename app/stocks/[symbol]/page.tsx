@@ -1,12 +1,11 @@
 import { Bot, CalendarDays, FileText } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ReportView } from "@/components/analyst/report-view";
+import { InlineReport } from "@/components/analyst/inline-report";
 import { KlineChart } from "@/components/stocks/kline-chart";
 import { WatchlistAction } from "@/components/stocks/watchlist-action";
 import { MetricCard } from "@/components/ui/metric-card";
 import { formatCurrency, formatSignedPercent } from "@/lib/formatters";
-import { generateStockFastReport } from "@/server/analyst/report";
 import { getMarketDataProvider } from "@/server/market-data/provider";
 
 export default async function StockDetailPage({ params }: { params: { symbol: string } }) {
@@ -17,12 +16,11 @@ export default async function StockDetailPage({ params }: { params: { symbol: st
     provider.getKline(symbol),
     provider.getFinancials(symbol),
     provider.getCompanyEvents(symbol),
-    generateStockFastReport(symbol)
   ]).catch(() => null);
 
   if (!data) notFound();
 
-  const [quote, kline, financials, events, report] = data;
+  const [quote, kline, financials, events] = data;
   const latest = financials[0];
 
   return (
@@ -124,7 +122,11 @@ export default async function StockDetailPage({ params }: { params: { symbol: st
         </div>
       </section>
 
-      <ReportView report={report} />
+      {/* AI 分析：客户端异步加载，不受 Vercel 10s 限制 */}
+      <InlineReport
+        apiPath={`/api/analysis/stock/${encodeURIComponent(symbol)}`}
+        loadingLabel={`AI 正在分析 ${quote.name}...`}
+      />
     </div>
   );
 }
