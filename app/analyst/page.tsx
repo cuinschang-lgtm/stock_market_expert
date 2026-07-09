@@ -1,5 +1,6 @@
 import { Bot } from "lucide-react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ReportView } from "@/components/analyst/report-view";
 import { SaveReportAction } from "@/components/analyst/save-report-action";
 import { generateStockFastReport } from "@/server/analyst/report";
@@ -12,7 +13,8 @@ export default async function AnalystPage({
   };
 }) {
   const symbol = searchParams.symbol ?? "hk00700";
-  const report = await generateStockFastReport(symbol);
+  const report = await generateStockFastReport(symbol).catch(() => null);
+  if (!report) notFound();
 
   return (
     <div className="space-y-6">

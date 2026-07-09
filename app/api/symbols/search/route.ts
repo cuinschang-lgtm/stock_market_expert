@@ -1,9 +1,17 @@
-import { NextResponse } from "next/server";
+import { apiError, jsonNoStore } from "@/app/api/_utils";
 import { getMarketDataProvider } from "@/server/market-data/provider";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get("q") ?? "";
-  const results = await getMarketDataProvider().searchSymbols(query);
-  return NextResponse.json({ results });
+  try {
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get("q") ?? "";
+    const results = await getMarketDataProvider().searchSymbols(query);
+    return jsonNoStore({ results });
+  } catch (error) {
+    return apiError(error);
+  }
 }

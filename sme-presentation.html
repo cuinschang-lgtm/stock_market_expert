@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Market Expert · 全栈股票投研工作台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@300;400;500;600&family=Noto+Serif+SC:wght@300;400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a1f3d;
+    --ink-rgb:10,31,61;
+    --paper:#f1f3f5;
+    --paper-rgb:241,243,245;
+    --paper-tint:#e4e8ec;
+    --ink-tint:#152a4a;
+    --accent:#007a6c;
+    --accent-rgb:0,122,108;
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+    --serif-en:"Playfair Display","Source Serif 4",Georgia,serif;
+    --serif-body-en:"Source Serif 4",Georgia,serif;
+    --serif-zh:"Noto Serif SC",source-han-serif-sc,serif;
+    --sans-zh:"Noto Sans SC",source-han-sans-sc,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);color:var(--paper);font-family:var(--sans-zh);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+
+  canvas.bg{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;display:block;transition:opacity 1.2s ease}
+  canvas#bg-light{opacity:0}
+  canvas#bg-dark{opacity:1}
+  body.light-bg canvas#bg-light{opacity:1}
+  body.light-bg canvas#bg-dark{opacity:0}
+  body.low-power canvas.bg{display:none!important}
+
+  #deck{position:fixed;inset:0;width:10000vw;height:100vh;display:flex;flex-wrap:nowrap;transition:transform .9s cubic-bezier(.77,0,.175,1);z-index:10;will-change:transform}
+  .slide{width:100vw;height:100vh;flex:0 0 100vw;position:relative;padding:6vh 6vw 10vh 6vw;display:flex;flex-direction:column;overflow:hidden}
+  .slide.light{color:var(--ink);background:var(--paper)}
+  .slide.dark{color:var(--paper);background:var(--ink)}
+  .slide::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;transition:background .7s ease}
+  .slide.light::before{background:rgba(var(--paper-rgb),.78);backdrop-filter:blur(3px)}
+  .slide.dark::before{background:rgba(var(--ink-rgb),.78);backdrop-filter:blur(3px)}
+  .slide.hero.light::before{background:rgba(var(--paper-rgb),.16);backdrop-filter:none}
+  .slide.hero.dark::before{background:rgba(var(--ink-rgb),.12);backdrop-filter:none}
+  .slide.hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
+  .slide.hero.light::after{background:linear-gradient(180deg,rgba(var(--paper-rgb),.28) 0%,rgba(var(--paper-rgb),0) 14%,rgba(var(--paper-rgb),0) 86%,rgba(var(--paper-rgb),.28) 100%)}
+  .slide.hero.dark::after{background:linear-gradient(180deg,rgba(var(--ink-rgb),.32) 0%,rgba(var(--ink-rgb),0) 14%,rgba(var(--ink-rgb),0) 86%,rgba(var(--ink-rgb),.32) 100%)}
+
+  .chrome{display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;opacity:.7}
+  .chrome .left,.chrome .right{display:flex;gap:2.4em;align-items:center}
+  .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.55}
+  .foot .title{font-family:var(--serif-zh);font-weight:400;letter-spacing:.05em;text-transform:none;opacity:.75;font-size:13px}
+
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.3em;text-transform:uppercase;opacity:.6;margin-bottom:2.6vh}
+  .display{font-family:var(--serif-en);font-weight:700;font-size:11vw;line-height:.92;letter-spacing:-.025em}
+  .display-zh{font-family:var(--serif-zh);font-weight:700;font-size:7.8vw;line-height:1.04;letter-spacing:-.005em}
+  .h1-zh{font-family:var(--serif-zh);font-weight:700;font-size:4.6vw;line-height:1.12;letter-spacing:-.005em}
+
+  .col{display:flex;flex-direction:column;gap:2.4vh}
+  .row{display:flex;align-items:center;gap:3vw}
+
+  .stat-card{display:flex;flex-direction:column;gap:.8vh;align-items:flex-start;padding-top:1.6vh;border-top:1px solid currentColor;border-color:rgba(127,127,127,.3)}
+  .stat-card .stat-label{font-family:var(--mono);font-size:max(10px,.78vw);letter-spacing:.24em;text-transform:uppercase;opacity:.55}
+  .stat-card .stat-note{font-family:var(--sans-zh);font-weight:400;font-size:max(13px,1.05vw);line-height:1.5;opacity:.72;margin-top:.6vh}
+  .stat-card .stat-nb{font-family:var(--serif-en);font-weight:800;font-size:5.8vw;line-height:.9;letter-spacing:-.03em;font-feature-settings:"tnum";margin-top:.4vh}
+  .callout{padding:3vh 2.4vw;border-left:3px solid currentColor;position:relative;font-family:var(--serif-zh);font-size:max(15px,1.2vw);line-height:1.55;opacity:.92}
+  .slide.light .callout{background:rgba(var(--ink-rgb),.05)}
+  .slide.dark .callout{background:rgba(var(--paper-rgb),.06)}
+  .callout .q-big{font-family:var(--serif-zh);font-weight:600;font-size:max(17px,1.6vw);line-height:1.42}
+  .callout .callout-src{display:block;margin-top:1.6vh;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.6}
+
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;padding:6px 14px;border:1px solid currentColor;opacity:.85}
+  .h-hero{font-family:var(--serif-zh);font-weight:900;font-size:10vw;line-height:.96;letter-spacing:-.02em}
+  .h-xl{font-family:var(--serif-zh);font-weight:700;font-size:6.2vw;line-height:1.08;letter-spacing:-.01em}
+  .h-sub{font-family:var(--serif-zh);font-weight:500;font-size:3.1vw;line-height:1.25;letter-spacing:0;opacity:.7}
+  .h-md{font-family:var(--serif-zh);font-weight:600;font-size:2.3vw;line-height:1.3}
+  .h-hero-en,.h-xl-en{font-family:var(--serif-en);letter-spacing:-.025em}
+  .lead{font-family:var(--serif-zh);font-weight:400;font-size:1.75vw;line-height:1.5;opacity:.86}
+  .meta-row{display:flex;gap:1.2em;align-items:baseline;flex-wrap:wrap;font-family:var(--mono);font-size:max(12px,.92vw);letter-spacing:.16em;text-transform:uppercase;opacity:.6}
+
+  .frame{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .frame.grid-2-7-5{display:grid;grid-template-columns:7fr 5fr;gap:3vw;align-items:start}
+  .frame.grid-2-6-6{display:grid;grid-template-columns:1fr 1fr;gap:3vw;align-items:start}
+  .frame.grid-3-3{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:minmax(0,1fr);gap:2.4vh 2vw}
+  .frame.split{display:grid;grid-template-columns:1fr 1fr;gap:4vw;flex:1;align-items:center}
+
+  .frame-img{overflow:hidden;position:relative;background:rgba(0,0,0,.04);box-sizing:border-box;width:100%;border-radius:4px}
+  .slide.dark .frame-img{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12)}
+  .frame-img>img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+  .frame-img.fit-contain>img{object-fit:contain;object-position:center center}
+  .frame-cap{display:flex;justify-content:space-between;align-items:baseline;gap:1vw;margin-top:.8vh;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;opacity:.72}
+  .frame-cap .pf{font-family:var(--serif-zh);font-weight:600;font-size:max(13px,1vw);letter-spacing:.04em;text-transform:none;opacity:.94}
+
+  .screenshot-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2vh 2vw;flex:1;align-content:center}
+  .screenshot-card{display:flex;flex-direction:column;gap:.6vh}
+  .screenshot-card .label{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.55;margin-bottom:.3vh}
+
+  .arch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2.4vh 1.6vw;flex:1;align-content:center}
+  .arch-card{display:flex;flex-direction:column;gap:1.2vh;padding:2.4vh 2vw;border:1px solid rgba(127,127,127,.28);background:rgba(var(--paper-rgb),.06);border-radius:12px}
+  .arch-card .arch-num{font-family:var(--serif-en);font-style:italic;font-weight:500;font-size:2vw;opacity:.35}
+  .arch-card .arch-title{font-family:var(--serif-zh);font-weight:700;font-size:1.4vw;line-height:1.2}
+  .arch-card .arch-desc{font-family:var(--sans-zh);font-weight:400;font-size:max(12px,.88vw);line-height:1.5;opacity:.72}
+
+  .step-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1.4vw;margin-top:3vh}
+  .step-item{display:flex;flex-direction:column;gap:.8vh;padding-top:1.4vh;border-top:1px solid currentColor;border-color:rgba(127,127,127,.35)}
+  .step-item .sn{font-family:var(--serif-en);font-style:italic;font-weight:500;font-size:1.15vw;opacity:.45}
+  .step-item .st{font-family:var(--sans-zh);font-weight:700;font-size:1.4vw;letter-spacing:.01em;line-height:1.2}
+  .step-item .sd{font-family:var(--sans-zh);font-weight:400;font-size:max(12px,.9vw);line-height:1.45;opacity:.72}
+
+  [data-anim]{opacity:1}
+  body.motion-ready [data-anim]{opacity:0}
+  body.low-power #deck{transition:none!important}
+  body.low-power *{animation:none!important;transition:none!important}
+  body.low-power.motion-ready [data-anim]{opacity:1!important;transform:none!important}
+
+  #nav{position:fixed;left:50%;bottom:2.6vh;transform:translateX(-50%);z-index:30;display:flex;gap:10px;padding:8px 14px;border-radius:999px;background:rgba(0,0,0,.18);backdrop-filter:blur(10px)}
+  #nav .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;transition:all .3s ease;border:0;padding:0}
+  #nav .dot:hover{background:rgba(255,255,255,.5);transform:scale(1.15)}
+  #nav .dot.active{background:rgba(255,255,255,.95);width:22px;border-radius:999px}
+  body.light-bg #nav{background:rgba(255,255,255,.25)}
+  body.light-bg #nav .dot{background:rgba(var(--ink-rgb),.25)}
+  body.light-bg #nav .dot.active{background:rgba(var(--ink-rgb),.9)}
+  #hint{position:fixed;bottom:3vh;right:3vw;z-index:30;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.4;mix-blend-mode:difference;color:#aaa}
+
+  @media(max-width:900px){
+    .h-hero{font-size:16vw}.h-xl{font-size:9vw}.h-sub{font-size:5vw}
+    .screenshot-grid{grid-template-columns:1fr}.arch-grid{grid-template-columns:repeat(2,1fr)}
+    .step-row{grid-template-columns:repeat(2,1fr)}
+    .frame.grid-2-7-5,.frame.grid-2-6-6,.frame.split{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<script>
+(function(){
+  const KEY='sme-ppt-low-power';
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const stored=localStorage.getItem(KEY);
+  window.__lowPowerMode=stored==='1'||(stored===null&&reduced);
+  function update(){const h=document.getElementById('hint');if(h)h.textContent='← → 翻页 · B '+(window.__lowPowerMode?'动态':'静态')+' · ESC 索引';}
+  window.__setLowPowerMode=function(on,opts){
+    window.__lowPowerMode=!!on;document.body.classList.toggle('low-power',window.__lowPowerMode);
+    if(opts&&opts.persist!==false)localStorage.setItem(KEY,window.__lowPowerMode?'1':'0');
+    if(window.__lowPowerMode&&document.getAnimations)document.getAnimations().forEach(function(a){a.cancel();});
+    update();dispatchEvent(new CustomEvent('ppt-low-power-change',{detail:{on:window.__lowPowerMode}}));
+    if(window.__playSlide)window.__playSlide(window.__currentSlideIndex||0);
+  };
+  document.body.classList.toggle('low-power',window.__lowPowerMode);
+  addEventListener('DOMContentLoaded',update,{once:true});
+})();
+</script>
+
+<canvas id="bg-dark" class="bg"></canvas>
+<canvas id="bg-light" class="bg"></canvas>
+<div id="nav"></div>
+<div id="hint">← → 翻页 · B 静态 · ESC 索引</div>
+
+<div id="deck">
+
+<!-- ====== 第1页 封面 ====== -->
+<section class="slide hero dark">
+  <div class="chrome">
+    <div>程序设计实践 · 课堂展示</div>
+    <div>Stock Market Expert · 01 / 09</div>
+  </div>
+  <div class="frame" style="display:grid;gap:4vh;align-content:center;min-height:80vh">
+    <div class="kicker" data-anim>Next.js 全栈项目实践</div>
+    <h1 class="h-hero h-hero-en" data-anim>Stock Market<br>Expert</h1>
+    <h2 class="h-sub" style="max-width:68vw" data-anim>全栈股票投研工作台的设计与实现</h2>
+    <p class="lead" style="max-width:60vw" data-anim>
+      如何用 Next.js 14 从零构建一个功能完善、架构清晰的全栈 Web 应用？
+    </p>
+    <div class="meta-row" data-anim>
+      <span>张书航</span><span>·</span><span>王悦莼</span>
+    </div>
+    <div class="meta-row" style="margin-top:1vh" data-anim>
+      <span>TypeScript</span><span>·</span><span>React 18</span><span>·</span><span>Tailwind CSS</span><span>·</span><span>Supabase</span>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">Stock Market Expert · 股票投研 MVP</div>
+    <div>数据驱动 · 架构优先 · 可持续迭代</div>
+  </div>
+</section>
+
+<!-- ====== 第2页 项目动机 ====== -->
+<section class="slide light">
+  <div class="chrome">
+    <div>Motivation · Why Build This</div>
+    <div>Project Insight · 02 / 09</div>
+  </div>
+  <div class="frame grid-2-7-5" style="padding-top:4.8vh;align-items:start">
+    <div class="col" style="gap:1.5vh;padding-right:1vw">
+      <div class="kicker" data-anim>项目动机</div>
+      <h2 class="h-xl" style="font-size:4.4vw;line-height:1.06" data-anim>投资研究需要更好的工具，
+但不是另一个"喊单机器人"</h2>
+      <h3 class="h-md" style="max-width:48vw;opacity:.72;font-size:2.25vw;line-height:1.28" data-anim>真正的需求：数据整理、研究分析、逻辑追踪、事件提醒</h3>
+      <p class="lead" style="max-width:48vw;font-size:1.6vw;line-height:1.5" data-anim>
+        市面上的股票工具要么只有行情展示，要么直接给买卖建议。我们想做的是一个真正帮助投资者完成投研闭环的工作台——整理数据、沉淀逻辑、追踪事件。
+      </p>
+      <div class="callout" style="padding:2.2vh 1.8vw;font-size:1.06vw;line-height:1.48" data-anim>
+        <span class="q-big">我们的原则：不喊单，不输出买卖建议，不传递内幕信息。所有分析仅用于信息整理与辅助研究。</span>
+        <span class="callout-src">核心原则 · 从产品第一天起就确定的边界</span>
+      </div>
+    </div>
+    <div class="col" style="gap:1.2vh;padding-top:4.4vh" data-anim>
+      <div class="stat-card">
+        <div class="stat-label">Pain Point 01</div>
+        <div class="stat-note"><strong>数据分散在不同平台。</strong><br>行情、财报、公告、行业新闻分散在多个 App，缺乏统一的投研视图。</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pain Point 02</div>
+        <div class="stat-note"><strong>投资逻辑难以沉淀。</strong><br>"为什么会关注这只股票"的判断往往停留在脑子里，没有结构化的记录和追踪。</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Our Answer</div>
+        <div class="stat-note"><strong>一个可持续迭代的全栈投研工作台。</strong><br>覆盖 A 股、港股、美股，从搜索自选到生成分析再到保存笔记，形成完整闭环。</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>为什么做？因为投研工具不该是喊单机器人</div>
+    <div>真正的价值在于帮助用户建立自己的研究体系</div>
+  </div>
+</section>
+
+<!-- ====== 第3页 技术架构 ====== -->
+<section class="slide dark">
+  <div class="chrome">
+    <div>Architecture · Full-Stack Design</div>
+    <div>Tech Stack · 03 / 09</div>
+  </div>
+  <div class="frame" style="padding-top:4.8vh">
+    <div class="kicker" data-anim>技术架构</div>
+    <h2 class="h-xl" style="font-size:4.2vw;line-height:1.06;max-width:70vw" data-anim>Next.js 14 App Router + 三层数据抽象</h2>
+    <p class="lead" style="max-width:72vw;margin-top:1.2vh;font-size:1.34vw;line-height:1.42" data-anim>
+      前端统一通过 MarketDataProvider 获取数据，页面层零依赖具体数据源。支持 mock / Supabase 云端 / 外部 API 三种模式无缝切换。
+    </p>
+    <div class="arch-grid" style="margin-top:2.8vh" data-anim>
+      <div class="arch-card">
+        <div class="arch-num">01</div>
+        <div class="arch-title">表现层</div>
+        <div class="arch-desc">React 18 Server Components + Tailwind CSS + Recharts 图表。26 条路由全部 Server-Side Rendering，首屏快速加载。</div>
+      </div>
+      <div class="arch-card">
+        <div class="arch-num">02</div>
+        <div class="arch-title">API 层</div>
+        <div class="arch-desc">11 个 Next.js API Routes，覆盖搜索/行情/K线/财务/事件/分析/笔记 CRUD。统一 JSON 响应格式 + 错误兜底。</div>
+      </div>
+      <div class="arch-card">
+        <div class="arch-num">03</div>
+        <div class="arch-title">数据层</div>
+        <div class="arch-desc">MarketDataProvider 接口抽象。Mock 模式零依赖即可运行；配置 Supabase 后自动切换云端持久化。</div>
+      </div>
+      <div class="arch-card">
+        <div class="arch-num">04</div>
+        <div class="arch-title">AI 编排层</div>
+        <div class="arch-desc">结构化投研分析引擎。生成包含位置/估值/事件/风险四模块的标准化报告，所有结论标注数据来源和时间戳。</div>
+      </div>
+      <div class="arch-card">
+        <div class="arch-num">05</div>
+        <div class="arch-title">持久化层</div>
+        <div class="arch-desc">Supabase PostgreSQL + 浏览器 localStorage 双层降级。未配置云端时自动回退本地存储，用户数据不丢失。</div>
+      </div>
+      <div class="arch-card">
+        <div class="arch-num">06</div>
+        <div class="arch-title">部署层</div>
+        <div class="arch-desc">Vercel 一键部署（香港节点），零配置即可上线。vercel.json 指定 hkg1 区域，改善中国大陆访问体验。</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>前端 → API → Provider → 数据源 · 每一层都独立可替换</div>
+    <div>架构的设计质量决定了项目的可维护性</div>
+  </div>
+</section>
+
+<!-- ====== 第4页 核心功能：仪表盘 + 个股 ====== -->
+<section class="slide light">
+  <div class="chrome">
+    <div>Features · Dashboard & Stock Detail</div>
+    <div>Core Pages · 04 / 09</div>
+  </div>
+  <div class="frame" style="padding-top:3vh">
+    <div class="kicker" data-anim>核心功能</div>
+    <h2 class="h-xl" style="font-size:3.8vw;line-height:1.08" data-anim>仪表盘 + 个股详情 · 两个核心页面</h2>
+    <p class="lead" style="margin-top:.6vh;font-size:1.2vw;line-height:1.4" data-anim>
+      左边是每日投研起点——Dashboard 汇总三大市场指数、热门板块与自选异动；右边是个股深度研究页——从行情 K 线到 AI 分析，一站式呈现。
+    </p>
+    <div class="screenshot-grid" style="margin-top:1.8vh" data-anim>
+      <div class="screenshot-card">
+        <div class="frame-img" style="height:30vh">
+          <img src="screenshots/01-dashboard.png" alt="Dashboard 截图">
+        </div>
+        <div class="frame-cap">
+          <span class="pf">Dashboard · 投研仪表盘</span>
+          <span>三大指数 + 自选异动 + 事件日历</span>
+        </div>
+      </div>
+      <div class="screenshot-card">
+        <div class="frame-img" style="height:30vh">
+          <img src="screenshots/02-stock.png" alt="个股详情页截图">
+        </div>
+        <div class="frame-cap">
+          <span class="pf">个股详情 · 腾讯控股 hk00700</span>
+          <span>行情 / K线 / 财务 / 事件 / AI分析</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>Dashboard 用作每日投研入口 · Stock Detail 是深度研究的主战场</div>
+    <div>两个页面覆盖了从概览到深度的完整路径</div>
+  </div>
+</section>
+
+<!-- ====== 第5页 数据流 ====== -->
+<section class="slide dark">
+  <div class="chrome">
+    <div>Data Layer · Provider Pattern</div>
+    <div>Architecture · 05 / 09</div>
+  </div>
+  <div class="frame" style="padding-top:4.8vh">
+    <div class="kicker" data-anim>数据流设计</div>
+    <h2 class="h-xl" style="font-size:4vw;line-height:1.06" data-anim>MarketDataProvider 抽象层<br>让数据源可替换、页面零改动</h2>
+    <p class="lead" style="max-width:72vw;margin-top:1vh;font-size:1.2vw;line-height:1.4" data-anim>
+      这是整个项目最核心的架构决策。所有页面组件不直接依赖任何具体数据源，而是通过统一的 TypeScript 接口获取数据。
+    </p>
+    <div class="step-row" data-anim>
+      <div class="step-item">
+        <div class="sn">Step 1</div>
+        <div class="st">搜索 & 行情</div>
+        <div class="sd">searchSymbols / getQuote / getKline —— 支持 A股港股美股的统一行情接口</div>
+      </div>
+      <div class="step-item">
+        <div class="sn">Step 2</div>
+        <div class="st">财务 & 事件</div>
+        <div class="sd">getFinancials / getCompanyEvents —— 财报、公告、行业事件的标准化结构</div>
+      </div>
+      <div class="step-item">
+        <div class="sn">Step 3</div>
+        <div class="st">行业 & 仪表盘</div>
+        <div class="sd">getSectorOverview / getDashboardData —— 板块数据和市场总览</div>
+      </div>
+      <div class="step-item">
+        <div class="sn">Step 4</div>
+        <div class="st">Provider 切换</div>
+        <div class="sd">Mock → Qclaw → External，环境变量一键切换，页面代码零修改</div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:2.4vh;padding:2vh 2vw" data-anim>
+      <span class="q-big" style="font-size:1.3vw">当前 Mock Provider 覆盖 5 只示例股票（茅台/腾讯/NVIDIA/宁德/Apple），含完整行情、K线、财务和事件数据，可独立跑通全部功能。</span>
+      <span class="callout-src">接入真实数据源时只需新增 Provider 实现，页面层完全不受影响</span>
+    </div>
+  </div>
+  <div class="foot">
+    <div>接口抽象是可持续迭代的基础 · 开发期 mock，上线期切换真实数据</div>
+    <div>好的架构让未来替换成本趋近于零</div>
+  </div>
+</section>
+
+<!-- ====== 第6页 AI 编排 + 行业截图 ====== -->
+<section class="slide light">
+  <div class="chrome">
+    <div>AI Analysis · Structured Research</div>
+    <div>Intelligence · 06 / 09</div>
+  </div>
+  <div class="frame" style="padding-top:3vh">
+    <div class="kicker" data-anim>AI 投研编排</div>
+    <h2 class="h-xl" style="font-size:3.8vw;line-height:1.08" data-anim>结构化分析 · 不是聊天框，是研究报告</h2>
+    <p class="lead" style="margin-top:.6vh;font-size:1.2vw;line-height:1.4" data-anim>
+      AI 分析模块不是简单的 Q&A 聊天，而是按照"当前位置→估值水位→短期事件→风险提示"的标准模板，生成可追溯、可保存的结构化报告。
+    </p>
+    <div class="screenshot-grid" style="margin-top:1.8vh" data-anim>
+      <div class="screenshot-card">
+        <div class="frame-img" style="height:28vh">
+          <img src="screenshots/03-analyst.png" alt="AI 分析页截图">
+        </div>
+        <div class="frame-cap">
+          <span class="pf">AI Analyst · 结构化投研分析</span>
+          <span>四模块标准化报告 / 可保存为笔记</span>
+        </div>
+      </div>
+      <div class="screenshot-card">
+        <div class="frame-img" style="height:28vh">
+          <img src="screenshots/04-sectors.png" alt="行业研究页截图">
+        </div>
+        <div class="frame-cap">
+          <span class="pf">行业主题研究 · 7 大板块</span>
+          <span>龙头样本 / 跟踪变量 / 选股线索</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>每份分析报告必含数据来源、时间戳和免责声明</div>
+    <div>不输出买卖建议，只帮助用户理清变量和风险</div>
+  </div>
+</section>
+
+<!-- ====== 第7页 构建验证 ====== -->
+<section class="slide dark">
+  <div class="chrome">
+    <div>Build & Deploy · Production Ready</div>
+    <div>Verification · 07 / 09</div>
+  </div>
+  <div class="frame grid-3-3" style="padding-top:4.8vh;align-content:center">
+    <div class="stat-card" data-anim>
+      <div class="stat-label">TypeScript</div>
+      <div class="stat-nb">0<span class="stat-unit" style="font-size:.38em">errors</span></div>
+      <div class="stat-note">strict 模式编译通过，全量类型安全</div>
+    </div>
+    <div class="stat-card" data-anim>
+      <div class="stat-label">Build</div>
+      <div class="stat-nb">26<span class="stat-unit" style="font-size:.38em">routes</span></div>
+      <div class="stat-note">9 个页面 + 11 个 API + 6 个内部路由</div>
+    </div>
+    <div class="stat-card" data-anim>
+      <div class="stat-label">Pages</div>
+      <div class="stat-nb">9<span class="stat-unit" style="font-size:.38em">pages</span></div>
+      <div class="stat-note">仪表盘 / 个股 / 自选 / 笔记 / 分析 / 报告 / 行业 / 逻辑 / 日历</div>
+    </div>
+    <div class="stat-card" data-anim>
+      <div class="stat-label">Deploy</div>
+      <div class="stat-nb">V<span class="stat-unit" style="font-size:.38em">ercel</span></div>
+      <div class="stat-note">香港节点部署，零配置一键上线</div>
+    </div>
+    <div class="stat-card" data-anim>
+      <div class="stat-label">Stocks</div>
+      <div class="stat-nb">5<span class="stat-unit" style="font-size:.38em">symbols</span></div>
+      <div class="stat-note">Mock 覆盖 A 股/港股/美股三类市场</div>
+    </div>
+    <div class="stat-card" data-anim>
+      <div class="stat-label">Packages</div>
+      <div class="stat-nb">7<span class="stat-unit" style="font-size:.38em">deps</span></div>
+      <div class="stat-note">Next.js + Supabase + Recharts + Lucide + clsx</div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>https://stockmarketexpert.vercel.app · 可在线访问验证</div>
+    <div>构建零错误 · 运行全正常 · 部署可演示</div>
+  </div>
+</section>
+
+<!-- ====== 第8页 总结 ====== -->
+<section class="slide hero light">
+  <div class="chrome">
+    <div>Summary · What We Built</div>
+    <div>Conclusion · 08 / 09</div>
+  </div>
+  <div class="frame" style="display:grid;gap:3.5vh;align-content:center;min-height:70vh">
+    <div class="kicker" data-anim>项目总结</div>
+    <h2 class="h-xl" style="font-size:4.6vw;line-height:1.05;max-width:72vw" data-anim>一个真正"能用"的全栈项目</h2>
+    <div class="col" style="gap:2vh;margin-top:2vh" data-anim>
+      <div class="stat-card">
+        <div class="stat-note" style="font-size:1.6vw;line-height:1.5">
+          <strong>① 架构先行：</strong>MarketDataProvider 抽象层让数据源可替换、页面零改动，这是项目可持续演进的基石。
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-note" style="font-size:1.6vw;line-height:1.5">
+          <strong>② 功能完整：</strong>9 个页面覆盖了从搜索到分析到报告导出的完整投研闭环，远超 MVP 目标。
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-note" style="font-size:1.6vw;line-height:1.5">
+          <strong>③ 工程质量：</strong>TypeScript strict 零错误、全量类型定义、Client/Server Component 分离、双层持久化降级。
+        </div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:1vh;padding:2.4vh 2.4vw" data-anim>
+      <span class="q-big" style="font-size:1.8vw">从"搭一个能跑的网站"到"设计一个能迭代的系统"——这才是全栈开发真正的挑战。</span>
+    </div>
+    <div class="meta-row" style="margin-top:1vh" data-anim>
+      <span>在线演示：stockmarketexpert.vercel.app</span><span>·</span><span>源码：github.com/cuinschang-lgtm/stock_market_expert</span>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">Stock Market Expert · 全栈股票投研工作台</div>
+    <div>谢谢！欢迎提问</div>
+  </div>
+</section>
+
+<!-- ====== 第9页 结尾 ====== -->
+<section class="slide hero dark">
+  <div class="chrome">
+    <div>程序设计实践 · 课堂展示</div>
+    <div>Stock Market Expert · 09 / 09</div>
+  </div>
+  <div class="frame" style="display:flex;align-items:center;justify-content:center;text-align:center;min-height:70vh">
+    <div class="col" style="gap:4vh;align-items:center">
+      <div class="kicker" data-anim>Thank You</div>
+      <h2 class="h-xl" style="font-size:5.5vw;line-height:1.2" data-anim>演示结束</h2>
+      <h2 class="h-sub" style="font-size:2.8vw;opacity:0.85" data-anim>祝你们假期愉快😊</h2>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">Stock Market Expert · 全栈股票投研工作台</div>
+    <div>github.com/cuinschang-lgtm/stock_market_expert</div>
+  </div>
+</section>
+
+</div><!-- /#deck -->
+
+<script>
+const deck=document.getElementById('deck');
+const slides=deck.querySelectorAll('.slide');
+const nav=document.getElementById('nav');
+let idx=0,total=slides.length,lock=false;
+deck.style.width=(total*100)+'vw';
+slides.forEach(function(s,i){
+  var b=document.createElement('button');
+  b.className='dot';b.dataset.i=i;b.setAttribute('aria-label','Page '+(i+1));
+  b.onclick=function(){go(i);};
+  nav.appendChild(b);
+});
+function go(n){
+  if(lock)return;
+  idx=Math.max(0,Math.min(total-1,n));
+  window.__currentSlideIndex=idx;
+  deck.style.transform='translateX('+(-idx*100)+'vw)';
+  nav.querySelectorAll('.dot').forEach(function(d,i){d.classList.toggle('active',i===idx);});
+  var el=slides[idx];
+  var th=el.dataset.theme||(el.classList.contains('light')?'light':(el.classList.contains('dark')?'dark':'dark'));
+  document.body.classList.toggle('light-bg',th==='light');
+  if(window.__playSlide)setTimeout(function(){window.__playSlide(idx);},450);
+  lock=true;setTimeout(function(){lock=false;},700);
+}
+var overviewOn=false;
+var ov=document.createElement('div');
+ov.id='overview';
+ov.style.cssText='position:fixed;inset:0;z-index:100;background:rgba('+getComputedStyle(document.body).getPropertyValue('--ink-rgb').trim()+',.92);backdrop-filter:blur(12px);display:none;overflow-y:auto;padding:4vh 4vw';
+document.body.appendChild(ov);
+function buildOverview(){
+  ov.innerHTML='';
+  var grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);gap:2vh 1.6vw;max-width:90vw;margin:0 auto';
+  slides.forEach(function(s,i){
+    var card=document.createElement('div');
+    card.style.cssText='cursor:pointer;border-radius:6px;overflow:hidden;border:2px solid '+(i===idx?'rgba(255,255,255,.8)':'rgba(255,255,255,.15)')+';transition:border-color .2s';
+    card.onmouseenter=function(){card.style.borderColor='rgba(255,255,255,.6)';};
+    card.onmouseleave=function(){card.style.borderColor=i===idx?'rgba(255,255,255,.8)':'rgba(255,255,255,.15)';};
+    var wrap=document.createElement('div');
+    wrap.style.cssText='width:100%;aspect-ratio:16/9;overflow:hidden;position:relative;pointer-events:none;background:'+(s.classList.contains('light')?'var(--paper)':'var(--ink)');
+    var clone=s.cloneNode(true);
+    clone.style.cssText='width:100vw;height:100vh;transform:scale('+(1/4.5)+');transform-origin:top left;position:absolute;top:0;left:0;pointer-events:none';
+    wrap.appendChild(clone);
+    var label=document.createElement('div');
+    label.style.cssText='padding:6px 10px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--paper);opacity:.7';
+    label.textContent=(i+1)+' / '+total;
+    card.appendChild(wrap);card.appendChild(label);
+    card.onclick=function(){toggleOverview();go(i);};
+    grid.appendChild(card);
+  });
+  ov.appendChild(grid);
+}
+function toggleOverview(){overviewOn=!overviewOn;if(overviewOn){buildOverview();ov.style.display='block';}else{ov.style.display='none';}}
+addEventListener('keydown',function(e){
+  if(e.key==='Escape'){e.preventDefault();toggleOverview();return;}
+  if(e.key&&e.key.toLowerCase()==='b'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){e.preventDefault();window.__setLowPowerMode(!window.__lowPowerMode);return;}
+  if(overviewOn)return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '||e.key==='ArrowDown'){if(window.__pipeAdvance&&window.__pipeAdvance())return;go(idx+1);return;}
+  if(e.key==='ArrowLeft'||e.key==='PageUp'||e.key==='ArrowUp')go(idx-1);
+  if(e.key==='Home')go(0);
+  if(e.key==='End')go(total-1);
+});
+var wheelTO=null,wheelAcc=0;
+addEventListener('wheel',function(e){
+  wheelAcc+=e.deltaY+e.deltaX;
+  if(Math.abs(wheelAcc)>50){
+    if(wheelAcc>0&&window.__pipeAdvance&&window.__pipeAdvance()){wheelAcc=0;}else{go(idx+(wheelAcc>0?1:-1));wheelAcc=0;}
+  }
+  clearTimeout(wheelTO);wheelTO=setTimeout(function(){wheelAcc=0;},150);
+},{passive:true});
+var tx=0,ty=0;
+addEventListener('touchstart',function(e){tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+addEventListener('touchend',function(e){
+  var dx=(e.changedTouches[0].clientX-tx),dy=(e.changedTouches[0].clientY-ty);
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){if(dx<0&&window.__pipeAdvance&&window.__pipeAdvance())return;go(idx+(dx<0?1:-1));}
+},{passive:true});
+go(0);
+</script>
+
+<script type="module">
+let motion;
+try { motion = await import('./assets/motion.min.js'); }
+catch(e1) {
+  try { motion = await import('https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm'); }
+  catch(e2) {
+    document.querySelectorAll('[data-anim]').forEach(function(el){el.style.opacity='1';el.style.transform='none';});
+  }
+}
+if(motion){
+  var _animate=motion.animate, _stagger=motion.stagger;
+  document.body.classList.add('motion-ready');
+  var EASE=[.22,1,.36,1];
+  var allSlides=[].slice.call(document.querySelectorAll('.slide'));
+  var lastIdx=-1, pipeStep=-1;
+
+  function resetAnims(slide){
+    slide.querySelectorAll('[data-anim]').forEach(function(el){el.style.opacity='';el.style.transform='';});
+  }
+  function revealStatic(slide){
+    resetAnims(slide);
+    if(document.getAnimations)document.getAnimations().forEach(function(a){a.cancel();});
+    slide.querySelectorAll('[data-anim]').forEach(function(el){el.style.opacity='1';el.style.transform='none';});
+  }
+  function playSlide(i){
+    var slide=allSlides[i];if(!slide)return;
+    lastIdx=i;
+    var recipe=slide.dataset.animate||(slide.classList.contains('hero')?'hero':'cascade');
+    if(window.__lowPowerMode){revealStatic(slide);return;}
+    if(recipe==='pipeline'){
+      pipeStep=-1;
+      slide.querySelectorAll('[data-anim]').forEach(function(el){el.style.opacity='0.15';el.style.transform='none';});
+      return;
+    }
+    resetAnims(slide);
+    var all=[].slice.call(slide.querySelectorAll('[data-anim]'));
+    if(!all.length)return;
+    if(recipe==='hero'){
+      _animate(all,{opacity:[0,1],y:[14,0]},{duration:.9,delay:_stagger(.16,{start:.2}),easing:EASE});
+    } else {
+      _animate(all,{opacity:[0,1],y:[16,0]},{duration:.75,delay:_stagger(.1,{start:.15}),easing:EASE});
+    }
+  }
+  function pipeAdvance(){
+    if(window.__lowPowerMode)return false;
+    var slide=allSlides[lastIdx];
+    if(!slide||slide.dataset.animate!=='pipeline')return false;
+    var steps=[].slice.call(slide.querySelectorAll('[data-anim="step"]'));
+    var arrows=[].slice.call(slide.querySelectorAll('[data-anim="arrow"]'));
+    if(pipeStep>=steps.length-1)return false;
+    pipeStep++;
+    _animate(steps[pipeStep],{opacity:[0.15,1],y:[8,0]},{duration:.5,easing:EASE});
+    if(pipeStep>0&&arrows[pipeStep-1])_animate(arrows[pipeStep-1],{opacity:[0.15,.7]},{duration:.3,delay:.15});
+    return true;
+  }
+  window.__playSlide=playSlide;window.__pipeAdvance=pipeAdvance;
+  playSlide(0);
+}
+</script>
+
+<script>
+(function(){
+var VS='attribute vec2 position;void main(){gl_Position=vec4(position,0.0,1.0);}';
+var FS_DARK='precision highp float;\nuniform vec2 u_resolution;uniform float u_time;uniform vec2 u_mouse;\nfloat hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\nfloat noise(vec2 p){vec2 i=floor(p),f=fract(p);float a=hash(i),b=hash(i+vec2(1,0)),c=hash(i+vec2(0,1)),d=hash(i+vec2(1,1));vec2 u=f*f*(3.0-2.0*f);return mix(a,b,u.x)+(c-a)*u.y*(1.0-u.x)+(d-b)*u.x*u.y;}\nfloat fbm(vec2 p){float v=0.0,a=0.5;mat2 m=mat2(0.80,0.60,-0.60,0.80);for(int i=0;i<5;i++){v+=a*noise(p);p=m*p*2.02;a*=0.5;}return v;}\nvoid main(){vec2 uv=gl_FragCoord.xy/u_resolution.xy;vec2 p=uv;p.x*=u_resolution.x/u_resolution.y;vec2 md=p-u_mouse;float dl=length(md);p+=normalize(md+vec2(0.0001))*exp(-dl*5.0)*0.03;vec2 q=vec2(fbm(p*1.8+u_time*0.07),fbm(p*1.8+vec2(5.2,1.3)+u_time*0.06));vec2 r=vec2(fbm(p*2.0+q*1.3+vec2(1.7,9.2)+u_time*0.05),fbm(p*2.0+q*1.3+vec2(8.3,2.8)+u_time*0.04));float f=fbm(p*2.2+r*1.5);vec3 col=mix(vec3(0.04,0.08,0.18),vec3(0.08,0.12,0.22),f);float ph=r.x*2.2+u_time*0.35;col+=vec3(0.06,0.44,0.38)*sin(ph)*0.06;float hi=pow(sin(p.x*4.0+p.y*3.0+u_time)*0.5+0.5,8.0);col+=hi*0.08;vec3 base=vec3(0.05,0.05,0.06);col=mix(base,col,0.85);gl_FragColor=vec4(col,1.0);}';
+var FS_LIGHT='precision highp float;\nuniform vec2 u_resolution;uniform float u_time;uniform vec2 u_mouse;\nfloat hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\nfloat noise(vec2 p){vec2 i=floor(p),f=fract(p);float a=hash(i),b=hash(i+vec2(1,0)),c=hash(i+vec2(0,1)),d=hash(i+vec2(1,1));vec2 u=f*f*(3.0-2.0*f);return mix(a,b,u.x)+(c-a)*u.y*(1.0-u.x)+(d-b)*u.x*u.y;}\nfloat fbm(vec2 p){float v=0.0,a=0.5;mat2 m=mat2(0.80,0.60,-0.60,0.80);for(int i=0;i<5;i++){v+=a*noise(p);p=m*p*2.02;a*=0.5;}return v;}\nvoid main(){vec2 uv=gl_FragCoord.xy/u_resolution.xy;vec2 p=uv;p.x*=u_resolution.x/u_resolution.y;vec2 m=u_mouse;m.x*=u_resolution.x/u_resolution.y;vec2 md=p-m;float dl=length(md);p+=normalize(md+vec2(0.0001))*exp(-dl*5.0)*0.03;vec2 q=vec2(fbm(p*1.8+u_time*0.07),fbm(p*1.8+vec2(5.2,1.3)+u_time*0.06));vec2 r=vec2(fbm(p*2.0+q*1.3+vec2(1.7,9.2)+u_time*0.05),fbm(p*2.0+q*1.3+vec2(8.3,2.8)+u_time*0.04));float f=fbm(p*2.2+r*1.5);vec3 col=mix(vec3(0.86,0.85,0.84),vec3(0.955,0.945,0.925),f);float ph=r.x*2.2+u_time*0.35;col+=vec3(0.04,0.46,0.40)*sin(ph)*0.055;col+=vec3(0.50,0.68,0.90)*sin(ph*0.8+2.0)*0.05;float hl=smoothstep(0.48,0.92,f);col+=hl*0.06;gl_FragColor=vec4(col,1.0);}';
+var mouse={x:0.5,y:0.5};
+addEventListener('mousemove',function(e){mouse.x=e.clientX/innerWidth;mouse.y=e.clientY/innerHeight;});
+function bootGL(canvasId,fsSrc){
+  var canvas=document.getElementById(canvasId);
+  var gl=canvas.getContext('webgl',{alpha:false,antialias:true});
+  if(!gl)return function(){return false;};
+  function mk(t,s){var sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);return sh;}
+  var prog=gl.createProgram();
+  gl.attachShader(prog,mk(gl.VERTEX_SHADER,VS));
+  gl.attachShader(prog,mk(gl.FRAGMENT_SHADER,fsSrc));
+  gl.linkProgram(prog);gl.useProgram(prog);
+  var buf=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+  var pos=gl.getAttribLocation(prog,'position');
+  gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
+  var lRes=gl.getUniformLocation(prog,'u_resolution'),lT=gl.getUniformLocation(prog,'u_time'),lM=gl.getUniformLocation(prog,'u_mouse');
+  function resize(){var d=Math.min(window.devicePixelRatio||1,2);canvas.width=innerWidth*d;canvas.height=innerHeight*d;gl.viewport(0,0,canvas.width,canvas.height);}
+  addEventListener('resize',resize);resize();
+  return function(tSec){gl.uniform2f(lRes,canvas.width,canvas.height);gl.uniform1f(lT,tSec);gl.uniform2f(lM,mouse.x,1-mouse.y);gl.drawArrays(gl.TRIANGLES,0,6);return true;};
+}
+var drawDark=null,drawLight=null,glRAF=0,glT0=Date.now();
+function startGL(){
+  if(window.__lowPowerMode||glRAF)return;
+  if(!drawDark)drawDark=bootGL('bg-dark',FS_DARK);
+  if(!drawLight)drawLight=bootGL('bg-light',FS_LIGHT);
+  glT0=Date.now();
+  function loop(){if(window.__lowPowerMode){glRAF=0;return;}var t=(Date.now()-glT0)/1000;drawDark(t);drawLight(t);glRAF=requestAnimationFrame(loop);}
+  glRAF=requestAnimationFrame(loop);
+}
+function stopGL(){if(glRAF)cancelAnimationFrame(glRAF);glRAF=0;}
+startGL();
+addEventListener('ppt-low-power-change',function(e){e.detail.on?stopGL():startGL();});
+})();
+</script>
+</body>
+</html>

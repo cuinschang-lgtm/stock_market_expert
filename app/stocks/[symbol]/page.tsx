@@ -1,5 +1,6 @@
 import { Bot, CalendarDays, FileText } from "lucide-react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ReportView } from "@/components/analyst/report-view";
 import { KlineChart } from "@/components/stocks/kline-chart";
 import { WatchlistAction } from "@/components/stocks/watchlist-action";
@@ -11,11 +12,17 @@ import { getMarketDataProvider } from "@/server/market-data/provider";
 export default async function StockDetailPage({ params }: { params: { symbol: string } }) {
   const provider = getMarketDataProvider();
   const symbol = decodeURIComponent(params.symbol);
-  const quote = await provider.getQuote(symbol);
-  const kline = await provider.getKline(symbol);
-  const financials = await provider.getFinancials(symbol);
-  const events = await provider.getCompanyEvents(symbol);
-  const report = await generateStockFastReport(symbol);
+  const data = await Promise.all([
+    provider.getQuote(symbol),
+    provider.getKline(symbol),
+    provider.getFinancials(symbol),
+    provider.getCompanyEvents(symbol),
+    generateStockFastReport(symbol)
+  ]).catch(() => null);
+
+  if (!data) notFound();
+
+  const [quote, kline, financials, events, report] = data;
   const latest = financials[0];
 
   return (

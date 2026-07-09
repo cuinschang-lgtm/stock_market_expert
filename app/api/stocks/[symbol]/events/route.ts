@@ -1,7 +1,15 @@
-import { NextResponse } from "next/server";
+import { apiError, jsonNoStore } from "@/app/api/_utils";
 import { getMarketDataProvider } from "@/server/market-data/provider";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 export async function GET(_request: Request, { params }: { params: { symbol: string } }) {
-  const events = await getMarketDataProvider().getCompanyEvents(decodeURIComponent(params.symbol));
-  return NextResponse.json({ events });
+  try {
+    const events = await getMarketDataProvider().getCompanyEvents(decodeURIComponent(params.symbol));
+    return jsonNoStore({ events });
+  } catch (error) {
+    return apiError(error, 404);
+  }
 }
