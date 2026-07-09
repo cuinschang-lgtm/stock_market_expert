@@ -75,15 +75,40 @@ const ALL_INTERNAL = Object.keys(TO_YAHOO);
 // -------- 工具函数 --------
 
 function toInternal(yahooSymbol: string): string {
-  return FROM_YAHOO[yahooSymbol.toUpperCase()] ?? yahooSymbol;
+  const raw = yahooSymbol.trim();
+  const upper = raw.toUpperCase();
+  if (FROM_YAHOO[upper]) return FROM_YAHOO[upper]!;
+  if (/^\d{6}\.SS$/.test(upper)) return `sh${upper.slice(0, 6)}`;
+  if (/^\d{6}\.SZ$/.test(upper)) return `sz${upper.slice(0, 6)}`;
+  if (/^\d{1,5}\.HK$/.test(upper)) return `hk${upper.replace(".HK", "").padStart(5, "0")}`;
+  if (/^[A-Z][A-Z0-9.-]*$/.test(upper)) return `us${upper.replace("-", "_")}`;
+  return raw;
 }
 
 function toYahoo(internalSymbol: string): string {
-  return TO_YAHOO[internalSymbol] ?? internalSymbol;
+  const raw = internalSymbol.trim();
+  const normalized = raw.startsWith("us") ? `us${raw.slice(2).toUpperCase()}` : raw.toLowerCase();
+  if (TO_YAHOO[normalized]) return TO_YAHOO[normalized]!;
+  if (/^sh\d{6}$/.test(normalized)) return `${normalized.slice(2)}.SS`;
+  if (/^sz\d{6}$/.test(normalized)) return `${normalized.slice(2)}.SZ`;
+  if (/^hk\d{5}$/.test(normalized)) return `${normalized.slice(2).slice(-4)}.HK`;
+  if (/^us[A-Z0-9_.-]+$/.test(normalized)) return normalized.slice(2).replace("_", "-");
+  if (/^[A-Za-z][A-Za-z0-9_.-]*$/.test(raw)) return raw.toUpperCase().replace("_", "-");
+  return raw;
 }
 
 function getMeta(internal: string): StockMeta {
-  return META[internal] ?? { market: "美股" as Market, exchange: "—", sector: "—", currency: "USD" };
+  if (META[internal]) return META[internal]!;
+  if (internal.startsWith("sh")) {
+    return { market: "A股", exchange: "上交所", sector: "—", currency: "CNY" };
+  }
+  if (internal.startsWith("sz")) {
+    return { market: "A股", exchange: "深交所", sector: "—", currency: "CNY" };
+  }
+  if (internal.startsWith("hk")) {
+    return { market: "港股", exchange: "港交所", sector: "—", currency: "HKD" };
+  }
+  return { market: "美股" as Market, exchange: "—", sector: "—", currency: "USD" };
 }
 
 /** eslint-disable @typescript-eslint/no-explicit-any */
@@ -219,13 +244,15 @@ export class YahooFinanceProvider implements MarketDataProvider {
         try {
           const testQuote: any = await yahooFinance.quote(possibleYahoo);
           if (testQuote?.regularMarketPrice) {
+            const internal = toInternal(possibleYahoo);
+            const m = getMeta(internal);
             return [{
-              symbol: toInternal(query.trim()),
+              symbol: internal,
               name: (testQuote.shortName ?? testQuote.longName ?? query.trim()) as string,
-              market: guessMarket(testQuote.exchange ?? ""),
-              exchange: (testQuote.exchange ?? "") as string,
-              sector: (testQuote.sector ?? "") as string,
-              currency: (testQuote.currency ?? "USD") as string,
+              market: guessMarket(testQuote.exchange ?? "") || m.market,
+              exchange: (testQuote.exchange ?? m.exchange) as string,
+              sector: (testQuote.sector ?? m.sector) as string,
+              currency: (testQuote.currency ?? m.currency) as string,
             }];
           }
         } catch { /* 也查不到就算了 */ }
@@ -238,7 +265,9 @@ export class YahooFinanceProvider implements MarketDataProvider {
     const yahoo = toYahoo(symbol);
     try {
       const q: any = await yahooFinance.quote(yahoo);
-      return mapQuote(yahoo, q);
+      const quote = mapQuote(yahoo, q);
+      if (quote.price > 0) return quote;
+      throw new Error(`Empty quote: ${symbol}`);
     } catch {
       if (mockQuotes[symbol]) return mockQuotes[symbol];
       throw new Error(`Unknown symbol: ${symbol}`);
