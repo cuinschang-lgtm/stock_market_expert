@@ -134,9 +134,82 @@ class TimeoutProvider implements MarketDataProvider {
   }
 }
 
+class FallbackMarketDataProvider implements MarketDataProvider {
+  constructor(private primary: MarketDataProvider, private fallback?: MarketDataProvider) {}
+
+  private async withFallback<T>(primaryFn: (provider: MarketDataProvider) => Promise<T>, fallbackValue: T) {
+    const primaryResult = await primaryFn(this.primary).catch(() => fallbackValue);
+    if (this.hasData(primaryResult)) return primaryResult;
+    if (!this.fallback) return primaryResult;
+    const fallbackResult = await primaryFn(this.fallback).catch(() => fallbackValue);
+    return this.hasData(fallbackResult) ? fallbackResult : primaryResult;
+  }
+
+  private hasData(value: unknown) {
+    if (Array.isArray(value)) return value.length > 0;
+    if (value && typeof value === "object" && "price" in value) {
+      return hasUsableQuote(value as QuoteSnapshot);
+    }
+    return Boolean(value);
+  }
+
+  async searchSymbols(query: string): Promise<SymbolSearchResult[]> {
+    return this.withFallback((provider) => provider.searchSymbols(query), [] as SymbolSearchResult[]);
+  }
+
+  async getQuote(symbol: string): Promise<QuoteSnapshot> {
+    const resolved = normalizeSymbol(symbol);
+    const primaryQuote = await this.primary.getQuote(resolved).catch(() => null);
+    if (hasUsableQuote(primaryQuote)) return primaryQuote;
+
+    const fallbackQuote = await this.fallback?.getQuote(resolved).catch(() => null);
+    if (hasUsableQuote(fallbackQuote)) return fallbackQuote;
+
+    if (quotes[resolved]) return quotes[resolved]!;
+    throw unknownSymbolError(symbol);
+  }
+
+  async getKline(symbol: string): Promise<KlinePoint[]> {
+    const resolved = normalizeSymbol(symbol);
+    return this.withFallback((provider) => provider.getKline(resolved), [] as KlinePoint[]);
+  }
+
+  async getFinancials(symbol: string): Promise<FinancialSnapshot[]> {
+    const resolved = normalizeSymbol(symbol);
+    return this.withFallback((provider) => provider.getFinancials(resolved), [] as FinancialSnapshot[]);
+  }
+
+  async getCompanyEvents(symbol: string): Promise<CompanyEvent[]> {
+    const resolved = normalizeSymbol(symbol);
+    return this.withFallback((provider) => provider.getCompanyEvents(resolved), [] as CompanyEvent[]);
+  }
+
+  async listSectorOverviews(): Promise<SectorOverview[]> {
+    return this.primary.listSectorOverviews();
+  }
+
+  async getSectorOverview(id: string): Promise<SectorOverview> {
+    return this.primary.getSectorOverview(id);
+  }
+
+  async getDashboardData(): Promise<DashboardData> {
+    return this.primary.getDashboardData();
+  }
+}
+
 // ---------- 导出 ----------
 
 let _provider: MarketDataProvider | null = null;
+
+function createYahooProvider() {
+  try {
+    const { YahooFinanceProvider } = require("./yahoo-provider");
+    return new TimeoutProvider(new YahooFinanceProvider());
+  } catch {
+    console.warn("[provider] Yahoo module not available");
+    return undefined;
+  }
+}
 
 export function getMarketDataProvider(): MarketDataProvider {
   if (!_provider) {
@@ -147,19 +220,16 @@ export function getMarketDataProvider(): MarketDataProvider {
         inner = new MockMarketDataProvider();
         break;
       case "yahoo":
-        try {
-          const { YahooFinanceProvider } = require("./yahoo-provider");
-          inner = new YahooFinanceProvider();
-        } catch {
-          console.warn("[provider] Yahoo module not available, using qq");
-          inner = new ChinaDataProvider();
-        }
+        inner = createYahooProvider() ?? new TimeoutProvider(new ChinaDataProvider());
         break;
       case "qq":
       default:
-        inner = new ChinaDataProvider();
+        inner = new FallbackMarketDataProvider(
+          new TimeoutProvider(new ChinaDataProvider()),
+          createYahooProvider(),
+        );
     }
-    _provider = new TimeoutProvider(inner);
+    _provider = inner;
   }
   return _provider!;
 }

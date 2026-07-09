@@ -20,8 +20,11 @@ type ChartRow = { idx: number; close: number; label: string };
 export function KlineChart({ data }: { data: KlinePoint[] }) {
   if (!data || data.length === 0) {
     return (
-      <div className="flex h-72 w-full items-center justify-center text-sm text-muted">
-        暂无K线数据
+      <div className="flex h-72 w-full flex-col items-center justify-center gap-2 text-center">
+        <div className="text-sm font-semibold text-ink">历史行情暂不可用</div>
+        <div className="max-w-sm text-xs leading-5 text-muted">
+          数据源未返回 K 线，系统会继续尝试备用数据源。
+        </div>
       </div>
     );
   }
