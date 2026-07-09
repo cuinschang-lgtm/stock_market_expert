@@ -56,6 +56,7 @@ function formatQuote(quote: QuoteSnapshot): string {
 }
 
 function formatFinancials(financials: FinancialSnapshot[]): string {
+  if (financials.length === 0) return "暂无可用财务快照。";
   return financials
     .map(
       (f) =>
@@ -67,6 +68,7 @@ function formatFinancials(financials: FinancialSnapshot[]): string {
 }
 
 function formatEvents(events: CompanyEvent[]): string {
+  if (events.length === 0) return "暂无近期公司事件。";
   return events
     .map((e) => `[${e.date}] ${e.type} · ${e.title} · 影响: ${e.impact} · ${e.summary} · 来源: ${e.source}`)
     .join("\n");
@@ -278,8 +280,12 @@ ${formatEvents(companyEvents)}
         title: "估值水位",
         points: [
           `PE-TTM ${quote.peTtm.toFixed(1)}，PB ${quote.pb.toFixed(1)}，PS ${quote.ps.toFixed(1)}，股息率 ${quote.dividendYield.toFixed(2)}%。`,
-          `最近一期 ${latest.period} 收入 ${latest.currency} ${latest.revenue.toFixed(1)} 亿，同比 ${latest.revenueYoY.toFixed(1)}%；净利润 ${latest.currency} ${latest.netIncome.toFixed(1)} 亿，同比 ${latest.netIncomeYoY.toFixed(1)}%。`,
-          `毛利率 ${latest.grossMargin.toFixed(1)}%，经营现金流 ${latest.currency} ${latest.operatingCashFlow.toFixed(1)} 亿，现金流质量是后续复核重点。`,
+          latest
+            ? `最近一期 ${latest.period} 收入 ${latest.currency} ${latest.revenue.toFixed(1)} 亿，同比 ${latest.revenueYoY.toFixed(1)}%；净利润 ${latest.currency} ${latest.netIncome.toFixed(1)} 亿，同比 ${latest.netIncomeYoY.toFixed(1)}%。`
+            : "暂无可用财务快照，估值判断需要等待财务数据源补齐后复核。",
+          latest
+            ? `毛利率 ${latest.grossMargin.toFixed(1)}%，经营现金流 ${latest.currency} ${latest.operatingCashFlow.toFixed(1)} 亿，现金流质量是后续复核重点。`
+            : "当前报告仅基于行情和事件数据整理，不应把缺失财务数据视为基本面结论。",
         ],
       },
       {

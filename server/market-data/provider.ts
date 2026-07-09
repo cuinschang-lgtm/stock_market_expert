@@ -1,4 +1,4 @@
-import type { Market, MarketDataProvider, QuoteSnapshot } from "@/lib/types";
+import type { MarketDataProvider, QuoteSnapshot } from "@/lib/types";
 import { ChinaDataProvider } from "./qq-provider";
 
 // Mock provider as fallback
@@ -20,50 +20,38 @@ import type {
   SymbolSearchResult,
 } from "@/lib/types";
 
-// ---------- 占位行情（用于超时/不可达时的安全兜底）----------
-
-function placeholderQuote(symbol: string): QuoteSnapshot {
-  const market = (
-    symbol.startsWith("sh") || symbol.startsWith("sz") ? "A股" :
-    symbol.startsWith("hk") ? "港股" : "美股"
-  ) as Market;
-  const currency = market === "港股" ? "HKD" : market === "美股" ? "USD" : "CNY";
-  return {
-    symbol,
-    name: symbol,
-    market,
-    exchange: "",
-    sector: "",
-    currency,
-    price: 0,
-    change: 0,
-    changePercent: 0,
-    volume: "",
-    turnover: "—",
-    peTtm: 0,
-    pb: 0,
-    ps: 0,
-    dividendYield: 0,
-    weekChangePercent: 0,
-    yearHigh: 0,
-    yearLow: 0,
-    updatedAt: new Date().toISOString().slice(0, 10),
-  };
-}
-
 // ---------- Mock ----------
 
 const SYMBOL_ALIASES: Record<string, string> = {
   sh300750: "sz300750",
+  "300750": "sz300750",
+  "00700": "hk00700",
+  "0700": "hk00700",
   sh00700: "hk00700",
-  sh0700: "hk00700",
   sh07000: "hk00700",
 };
 
+function normalizeSymbol(symbol: string) {
+  const raw = symbol.trim();
+  const lower = raw.toLowerCase();
+  const canonical = lower.startsWith("us") ? `us${raw.slice(2).toUpperCase()}` : lower;
+  return SYMBOL_ALIASES[lower] ?? SYMBOL_ALIASES[canonical] ?? canonical;
+}
+
+function unknownSymbolError(symbol: string) {
+  const value = symbol.trim() || symbol;
+  return new Error(
+    `暂未找到或无法获取股票代码「${value}」。请检查代码格式，或先通过搜索选择匹配结果。`
+  );
+}
+
+function hasUsableQuote(quote: QuoteSnapshot | null | undefined): quote is QuoteSnapshot {
+  return Number.isFinite(quote?.price) && Number(quote?.price) > 0;
+}
+
 function ensureSymbol(symbol: string) {
-  const normalized = symbol.trim();
-  const resolved = SYMBOL_ALIASES[normalized] ?? normalized;
-  if (!quotes[resolved]) throw new Error(`Unknown symbol: ${symbol}`);
+  const resolved = normalizeSymbol(symbol);
+  if (!quotes[resolved]) throw unknownSymbolError(symbol);
   return resolved;
 }
 
@@ -88,7 +76,7 @@ class MockMarketDataProvider implements MarketDataProvider {
   async getDashboardData()                  { return dashboard; }
 }
 
-// ---------- Timeout wrapper (永远不抛，安全兜底) ----------
+// ---------- Timeout wrapper ----------
 
 const IS_VERCEL = !!process.env.VERCEL;
 const QUOTE_TIMEOUT = IS_VERCEL ? 4000 : 8000;   // Vercel 美国节点，4s 就够了
@@ -104,34 +92,36 @@ class TimeoutProvider implements MarketDataProvider {
     ]).catch(() => fallback);
   }
 
-  // ---- 核心：getQuote 永不抛 ----
   async getQuote(symbol: string): Promise<QuoteSnapshot> {
+    const resolved = normalizeSymbol(symbol);
     const result = await this.race(
       QUOTE_TIMEOUT,
-      () => this.inner.getQuote(symbol),
+      () => this.inner.getQuote(resolved),
       null as unknown as QuoteSnapshot,
     );
-    if (result?.price && result.price > 0) return result;
+    if (hasUsableQuote(result)) return result;
     // 回退 mock（含 PE/PB 等估值数据的 5 只预设股票）
-    if (quotes[symbol]) return quotes[symbol]!;
-    // 非预设股票：返回占位行情，页面仍可安全渲染
-    return placeholderQuote(symbol);
+    if (quotes[resolved]) return quotes[resolved]!;
+    throw unknownSymbolError(symbol);
   }
 
   async searchSymbols(q: string): Promise<SymbolSearchResult[]> {
     return this.race(DATA_TIMEOUT, () => this.inner.searchSymbols(q), []);
   }
   async getKline(symbol: string): Promise<KlinePoint[]> {
-    const r = await this.race(DATA_TIMEOUT, () => this.inner.getKline(symbol), [] as KlinePoint[]);
-    return r.length > 0 ? r : (klines[symbol] ?? []);
+    const resolved = normalizeSymbol(symbol);
+    const r = await this.race(DATA_TIMEOUT, () => this.inner.getKline(resolved), [] as KlinePoint[]);
+    return r.length > 0 ? r : (klines[resolved] ?? []);
   }
   async getFinancials(symbol: string): Promise<FinancialSnapshot[]> {
-    const r = await this.race(DATA_TIMEOUT, () => this.inner.getFinancials(symbol), [] as FinancialSnapshot[]);
-    return r.length > 0 ? r : (financials[symbol] ?? []);
+    const resolved = normalizeSymbol(symbol);
+    const r = await this.race(DATA_TIMEOUT, () => this.inner.getFinancials(resolved), [] as FinancialSnapshot[]);
+    return r.length > 0 ? r : (financials[resolved] ?? []);
   }
   async getCompanyEvents(symbol: string): Promise<CompanyEvent[]> {
-    const r = await this.race(DATA_TIMEOUT, () => this.inner.getCompanyEvents(symbol), [] as CompanyEvent[]);
-    return r.length > 0 ? r : (events[symbol] ?? []);
+    const resolved = normalizeSymbol(symbol);
+    const r = await this.race(DATA_TIMEOUT, () => this.inner.getCompanyEvents(resolved), [] as CompanyEvent[]);
+    return r.length > 0 ? r : (events[resolved] ?? []);
   }
   async listSectorOverviews(): Promise<SectorOverview[]> {
     return this.race(DATA_TIMEOUT, () => this.inner.listSectorOverviews(), Object.values(sectors));

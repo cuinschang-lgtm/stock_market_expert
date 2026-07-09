@@ -30,7 +30,10 @@ export function InlineReport({ apiPath, loadingLabel }: InlineReportProps) {
       });
       clearTimeout(timeout);
 
-      if (!res.ok) throw new Error(`Server 返回 ${res.status}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error ?? `Server 返回 ${res.status}`);
+      }
       const data = await res.json();
       setReport(data.report ?? data.sector?.report ?? null);
     } catch (err: unknown) {

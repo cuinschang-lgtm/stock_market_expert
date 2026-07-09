@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, Loader2, RotateCw } from "lucide-react";
+import { AlertCircle, Bot, Loader2, RotateCw, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { ReportView } from "@/components/analyst/report-view";
@@ -8,6 +8,13 @@ import { SaveReportAction } from "@/components/analyst/save-report-action";
 import type { AnalystReport } from "@/lib/types";
 
 const QUICK_SYMBOLS = ["hk00700", "sh600519", "usNVDA", "sz300750"];
+
+function toFriendlyError(message: string, symbol: string) {
+  if (message.includes("暂未找到") || message.includes("Unknown symbol")) {
+    return `暂未找到或无法获取股票代码「${symbol}」。请检查代码格式，或先通过顶部搜索选择匹配结果。`;
+  }
+  return message;
+}
 
 // Next.js 14 需要将 useSearchParams() 包裹在 Suspense 内
 function AnalystContent() {
@@ -37,7 +44,8 @@ function AnalystContent() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error((body as { error?: string }).error ?? `Server 返回 ${res.status}`);
+        const rawMessage = (body as { error?: string }).error ?? `Server 返回 ${res.status}`;
+        throw new Error(toFriendlyError(rawMessage, sym));
       }
 
       const data = await res.json();
@@ -108,16 +116,27 @@ function AnalystContent() {
       {/* 错误提示 */}
       {!loading && error && (
         <section className="rounded-lg border border-danger/30 bg-red-50 p-6 text-center shadow-sm">
-          <p className="text-sm font-semibold text-danger">分析失败</p>
-          <p className="mt-2 text-sm text-muted">{error}</p>
-          <button
-            type="button"
-            onClick={() => fetchAnalysis(symbol)}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent"
-          >
-            <RotateCw className="h-4 w-4" />
-            重试
-          </button>
+          <AlertCircle className="mx-auto h-7 w-7 text-danger" />
+          <p className="mt-3 text-sm font-semibold text-danger">无法生成分析</p>
+          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted">{error}</p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard")}
+              className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent"
+            >
+              <Search className="h-4 w-4" />
+              回到搜索
+            </button>
+            <button
+              type="button"
+              onClick={() => fetchAnalysis(symbol)}
+              className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent"
+            >
+              <RotateCw className="h-4 w-4" />
+              重试
+            </button>
+          </div>
         </section>
       )}
 
