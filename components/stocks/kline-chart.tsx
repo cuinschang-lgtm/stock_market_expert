@@ -11,6 +11,14 @@ import {
   YAxis
 } from "recharts";
 
+/** 将日期字符串统一为简洁显示格式，避免 recharts Date 解析崩溃 */
+function normalizeDate(raw: string): string {
+  // "2026-07-09" → "07-09"
+  // "06-21"     → "06-21"
+  const match = raw.match(/(\d{2})-(\d{2})$/);
+  return match ? `${match[1]}-${match[2]}` : raw;
+}
+
 export function KlineChart({ data }: { data: KlinePoint[] }) {
   if (!data || data.length === 0) {
     return (
@@ -20,10 +28,14 @@ export function KlineChart({ data }: { data: KlinePoint[] }) {
     );
   }
 
-  // 单点数据：补充一个相同点避免 recharts dataMin=dataMax 报错
-  const chartData = data.length === 1
-    ? [{ ...data[0] }, { ...data[0], date: data[0]!.date + " " }]
-    : data;
+  // 格式化 + 单点补点（避免 recharts 报错）
+  const chartData = (() => {
+    const formatted = data.map((d) => ({ date: normalizeDate(d.date), close: d.close }));
+    if (formatted.length === 1) {
+      return [formatted[0], { date: formatted[0]!.date + " ", close: formatted[0]!.close }];
+    }
+    return formatted;
+  })();
 
   const domain = (() => {
     const vals = data.map((d) => d.close);
@@ -44,7 +56,13 @@ export function KlineChart({ data }: { data: KlinePoint[] }) {
             </linearGradient>
           </defs>
           <CartesianGrid stroke="#d9e0e7" strokeDasharray="3 3" />
-          <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fill: "#5f6b76", fontSize: 12 }} />
+          <XAxis
+            dataKey="date"
+            type="category"
+            tickLine={false}
+            axisLine={false}
+            tick={{ fill: "#5f6b76", fontSize: 12 }}
+          />
           <YAxis
             domain={domain}
             tickLine={false}
