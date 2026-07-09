@@ -1,4 +1,11 @@
-import type { MarketDataProvider, QuoteSnapshot } from "@/lib/types";
+import type {
+  MarketDataMeta,
+  MarketDataMode,
+  MarketDataProvider,
+  MarketDataResult,
+  MarketDataSource,
+  QuoteSnapshot,
+} from "@/lib/types";
 import { ChinaDataProvider } from "./qq-provider";
 
 // Mock provider as fallback
@@ -49,6 +56,14 @@ function hasUsableQuote(quote: QuoteSnapshot | null | undefined): quote is Quote
   return Number.isFinite(quote?.price) && Number(quote?.price) > 0;
 }
 
+function hasData(value: unknown) {
+  if (Array.isArray(value)) return value.length > 0;
+  if (value && typeof value === "object" && "price" in value) {
+    return hasUsableQuote(value as QuoteSnapshot);
+  }
+  return Boolean(value);
+}
+
 function ensureSymbol(symbol: string) {
   const resolved = normalizeSymbol(symbol);
   if (!quotes[resolved]) throw unknownSymbolError(symbol);
@@ -85,121 +100,194 @@ const DATA_TIMEOUT  = IS_VERCEL ? 3000 : 6000;
 class TimeoutProvider implements MarketDataProvider {
   constructor(private inner: MarketDataProvider) {}
 
-  private race<T>(ms: number, fn: () => Promise<T>, fallback: T): Promise<T> {
+  private race<T>(ms: number, fn: () => Promise<T>): Promise<T> {
     return Promise.race([
       fn(),
       new Promise<T>((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), ms)),
-    ]).catch(() => fallback);
+    ]);
   }
 
   async getQuote(symbol: string): Promise<QuoteSnapshot> {
     const resolved = normalizeSymbol(symbol);
-    const result = await this.race(
-      QUOTE_TIMEOUT,
-      () => this.inner.getQuote(resolved),
-      null as unknown as QuoteSnapshot,
-    );
+    const result = await this.race(QUOTE_TIMEOUT, () => this.inner.getQuote(resolved));
     if (hasUsableQuote(result)) return result;
-    // 回退 mock（含 PE/PB 等估值数据的 5 只预设股票）
-    if (quotes[resolved]) return quotes[resolved]!;
     throw unknownSymbolError(symbol);
   }
 
   async searchSymbols(q: string): Promise<SymbolSearchResult[]> {
-    return this.race(DATA_TIMEOUT, () => this.inner.searchSymbols(q), []);
+    return this.race(DATA_TIMEOUT, () => this.inner.searchSymbols(q)).catch(() => []);
   }
   async getKline(symbol: string): Promise<KlinePoint[]> {
     const resolved = normalizeSymbol(symbol);
-    const r = await this.race(DATA_TIMEOUT, () => this.inner.getKline(resolved), [] as KlinePoint[]);
-    return r.length > 0 ? r : (klines[resolved] ?? []);
+    return this.race(DATA_TIMEOUT, () => this.inner.getKline(resolved)).catch(() => []);
   }
   async getFinancials(symbol: string): Promise<FinancialSnapshot[]> {
     const resolved = normalizeSymbol(symbol);
-    const r = await this.race(DATA_TIMEOUT, () => this.inner.getFinancials(resolved), [] as FinancialSnapshot[]);
+    const r = await this.race(DATA_TIMEOUT, () => this.inner.getFinancials(resolved)).catch(() => []);
     return r.length > 0 ? r : (financials[resolved] ?? []);
   }
   async getCompanyEvents(symbol: string): Promise<CompanyEvent[]> {
     const resolved = normalizeSymbol(symbol);
-    const r = await this.race(DATA_TIMEOUT, () => this.inner.getCompanyEvents(resolved), [] as CompanyEvent[]);
+    const r = await this.race(DATA_TIMEOUT, () => this.inner.getCompanyEvents(resolved)).catch(() => []);
     return r.length > 0 ? r : (events[resolved] ?? []);
   }
   async listSectorOverviews(): Promise<SectorOverview[]> {
-    return this.race(DATA_TIMEOUT, () => this.inner.listSectorOverviews(), Object.values(sectors));
+    return this.race(DATA_TIMEOUT, () => this.inner.listSectorOverviews()).catch(() => Object.values(sectors));
   }
   async getSectorOverview(id: string): Promise<SectorOverview> {
-    return this.race(DATA_TIMEOUT, () => this.inner.getSectorOverview(id), sectors.ai!);
+    return this.race(DATA_TIMEOUT, () => this.inner.getSectorOverview(id)).catch(() => sectors.ai!);
   }
   async getDashboardData(): Promise<DashboardData> {
-    return this.race(DATA_TIMEOUT, () => this.inner.getDashboardData(), dashboard);
+    return this.race(DATA_TIMEOUT, () => this.inner.getDashboardData()).catch(() => dashboard);
   }
 }
 
-class FallbackMarketDataProvider implements MarketDataProvider {
-  constructor(private primary: MarketDataProvider, private fallback?: MarketDataProvider) {}
+export interface ObservableMarketDataProvider extends MarketDataProvider {
+  getQuoteWithMeta(symbol: string): Promise<MarketDataResult<QuoteSnapshot>>;
+  getKlineWithMeta(symbol: string): Promise<MarketDataResult<KlinePoint[]>>;
+}
 
-  private async withFallback<T>(primaryFn: (provider: MarketDataProvider) => Promise<T>, fallbackValue: T) {
-    const primaryResult = await primaryFn(this.primary).catch(() => fallbackValue);
-    if (this.hasData(primaryResult)) return primaryResult;
-    if (!this.fallback) return primaryResult;
-    const fallbackResult = await primaryFn(this.fallback).catch(() => fallbackValue);
-    return this.hasData(fallbackResult) ? fallbackResult : primaryResult;
+interface ProviderCandidate {
+  source: MarketDataSource;
+  label: string;
+  provider: MarketDataProvider;
+}
+
+class ObservableFallbackMarketDataProvider implements ObservableMarketDataProvider {
+  constructor(private candidates: ProviderCandidate[]) {}
+
+  private meta<T>(
+    source: ProviderCandidate,
+    data: T,
+    requestedSymbol?: string,
+    resolvedSymbol?: string,
+    message?: string,
+  ): MarketDataResult<T> {
+    const mode: MarketDataMode = source.source === "mock" ? "demo" : source === this.candidates[0] ? "live" : "fallback";
+    return {
+      data,
+      meta: {
+        source: source.source,
+        sourceLabel: source.label,
+        mode,
+        fallbackUsed: source !== this.candidates[0],
+        timestamp: new Date().toISOString(),
+        requestedSymbol,
+        resolvedSymbol,
+        message,
+      },
+    };
   }
 
-  private hasData(value: unknown) {
-    if (Array.isArray(value)) return value.length > 0;
-    if (value && typeof value === "object" && "price" in value) {
-      return hasUsableQuote(value as QuoteSnapshot);
+  private async resolve<T>(
+    resolveFn: (provider: MarketDataProvider) => Promise<T>,
+    isValid: (value: T) => boolean,
+    requestedSymbol?: string,
+  ): Promise<MarketDataResult<T>> {
+    const failures: string[] = [];
+    for (const candidate of this.candidates) {
+      try {
+        const result = await resolveFn(candidate.provider);
+        if (isValid(result)) {
+          const message = candidate.source === "mock"
+            ? "当前使用稳定演示数据；切换 DATA_SOURCE=qq 或 yahoo 后可尝试实时行情。"
+            : candidate !== this.candidates[0]
+              ? "主数据源暂不可用，已切换到备用数据源。"
+              : undefined;
+          return this.meta(candidate, result, requestedSymbol, undefined, message);
+        }
+        failures.push(`${candidate.label}: empty`);
+      } catch (error) {
+        failures.push(`${candidate.label}: ${error instanceof Error ? error.message : "failed"}`);
+      }
     }
-    return Boolean(value);
+    throw requestedSymbol ? unknownSymbolError(requestedSymbol) : new Error(failures.join("; ") || "No market data");
   }
 
   async searchSymbols(query: string): Promise<SymbolSearchResult[]> {
-    return this.withFallback((provider) => provider.searchSymbols(query), [] as SymbolSearchResult[]);
+    const result = await this.resolve(
+      (provider) => provider.searchSymbols(query),
+      (items) => items.length > 0,
+    ).catch(() => this.meta(this.candidates[this.candidates.length - 1]!, [] as SymbolSearchResult[], undefined, undefined, "未找到匹配股票。"));
+    return result.data;
   }
 
   async getQuote(symbol: string): Promise<QuoteSnapshot> {
+    return (await this.getQuoteWithMeta(symbol)).data;
+  }
+
+  async getQuoteWithMeta(symbol: string): Promise<MarketDataResult<QuoteSnapshot>> {
     const resolved = normalizeSymbol(symbol);
-    const primaryQuote = await this.primary.getQuote(resolved).catch(() => null);
-    if (hasUsableQuote(primaryQuote)) return primaryQuote;
-
-    const fallbackQuote = await this.fallback?.getQuote(resolved).catch(() => null);
-    if (hasUsableQuote(fallbackQuote)) return fallbackQuote;
-
-    if (quotes[resolved]) return quotes[resolved]!;
-    throw unknownSymbolError(symbol);
+    const result = await this.resolve(
+      (provider) => provider.getQuote(resolved),
+      (quote) => hasUsableQuote(quote),
+      symbol,
+    );
+    result.meta.resolvedSymbol = result.data.symbol;
+    return result;
   }
 
   async getKline(symbol: string): Promise<KlinePoint[]> {
+    return (await this.getKlineWithMeta(symbol)).data;
+  }
+
+  async getKlineWithMeta(symbol: string): Promise<MarketDataResult<KlinePoint[]>> {
     const resolved = normalizeSymbol(symbol);
-    return this.withFallback((provider) => provider.getKline(resolved), [] as KlinePoint[]);
+    return this.resolve(
+      (provider) => provider.getKline(resolved),
+      (items) => items.length > 0,
+      symbol,
+    );
   }
 
   async getFinancials(symbol: string): Promise<FinancialSnapshot[]> {
     const resolved = normalizeSymbol(symbol);
-    return this.withFallback((provider) => provider.getFinancials(resolved), [] as FinancialSnapshot[]);
+    const result = await this.resolve(
+      (provider) => provider.getFinancials(resolved),
+      (items) => items.length > 0,
+      symbol,
+    ).catch(() => this.meta(this.candidates[this.candidates.length - 1]!, [] as FinancialSnapshot[], symbol));
+    return result.data;
   }
 
   async getCompanyEvents(symbol: string): Promise<CompanyEvent[]> {
     const resolved = normalizeSymbol(symbol);
-    return this.withFallback((provider) => provider.getCompanyEvents(resolved), [] as CompanyEvent[]);
+    const result = await this.resolve(
+      (provider) => provider.getCompanyEvents(resolved),
+      (items) => items.length > 0,
+      symbol,
+    ).catch(() => this.meta(this.candidates[this.candidates.length - 1]!, [] as CompanyEvent[], symbol));
+    return result.data;
   }
 
   async listSectorOverviews(): Promise<SectorOverview[]> {
-    return this.primary.listSectorOverviews();
+    const result = await this.resolve(
+      (provider) => provider.listSectorOverviews(),
+      (items) => items.length > 0,
+    ).catch(() => this.meta(this.candidates[this.candidates.length - 1]!, Object.values(sectors)));
+    return result.data;
   }
 
   async getSectorOverview(id: string): Promise<SectorOverview> {
-    return this.primary.getSectorOverview(id);
+    const result = await this.resolve(
+      (provider) => provider.getSectorOverview(id),
+      hasData,
+    ).catch(() => this.meta(this.candidates[this.candidates.length - 1]!, sectors.ai!));
+    return result.data;
   }
 
   async getDashboardData(): Promise<DashboardData> {
-    return this.primary.getDashboardData();
+    const result = await this.resolve(
+      (provider) => provider.getDashboardData(),
+      hasData,
+    ).catch(() => this.meta(this.candidates[this.candidates.length - 1]!, dashboard));
+    return result.data;
   }
 }
 
 // ---------- 导出 ----------
 
-let _provider: MarketDataProvider | null = null;
+let _provider: ObservableMarketDataProvider | null = null;
 
 function createYahooProvider() {
   try {
@@ -211,25 +299,56 @@ function createYahooProvider() {
   }
 }
 
-export function getMarketDataProvider(): MarketDataProvider {
+export function getMarketDataProvider(): ObservableMarketDataProvider {
   if (!_provider) {
     const src = process.env.DATA_SOURCE ?? "qq";
-    let inner: MarketDataProvider;
+    const mockCandidate: ProviderCandidate = {
+      source: "mock",
+      label: "演示数据",
+      provider: new MockMarketDataProvider(),
+    };
+    let candidates: ProviderCandidate[];
     switch (src) {
       case "mock":
-        inner = new MockMarketDataProvider();
+      case "demo":
+        candidates = [mockCandidate];
         break;
-      case "yahoo":
-        inner = createYahooProvider() ?? new TimeoutProvider(new ChinaDataProvider());
+      case "yahoo": {
+        const yahooFirst = createYahooProvider();
+        candidates = [
+          yahooFirst && {
+            source: "yahoo" as const,
+            label: "Yahoo Finance",
+            provider: yahooFirst,
+          },
+          {
+            source: "qq" as const,
+            label: "腾讯行情",
+            provider: new TimeoutProvider(new ChinaDataProvider()),
+          },
+          mockCandidate,
+        ].filter(Boolean) as ProviderCandidate[];
         break;
+      }
       case "qq":
-      default:
-        inner = new FallbackMarketDataProvider(
-          new TimeoutProvider(new ChinaDataProvider()),
-          createYahooProvider(),
-        );
+      default: {
+        const yahooFallback = createYahooProvider();
+        candidates = [
+          {
+            source: "qq",
+            label: "腾讯行情",
+            provider: new TimeoutProvider(new ChinaDataProvider()),
+          },
+          yahooFallback && {
+            source: "yahoo" as const,
+            label: "Yahoo Finance",
+            provider: yahooFallback,
+          },
+          mockCandidate,
+        ].filter(Boolean) as ProviderCandidate[];
+      }
     }
-    _provider = inner;
+    _provider = new ObservableFallbackMarketDataProvider(candidates);
   }
   return _provider!;
 }

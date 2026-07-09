@@ -32,6 +32,25 @@ export interface KlinePoint {
   close: number;
 }
 
+export type MarketDataSource = "qq" | "yahoo" | "mock";
+export type MarketDataMode = "live" | "fallback" | "demo";
+
+export interface MarketDataMeta {
+  source: MarketDataSource;
+  sourceLabel: string;
+  mode: MarketDataMode;
+  fallbackUsed: boolean;
+  timestamp: string;
+  requestedSymbol?: string;
+  resolvedSymbol?: string;
+  message?: string;
+}
+
+export interface MarketDataResult<T> {
+  data: T;
+  meta: MarketDataMeta;
+}
+
 export interface FinancialSnapshot {
   period: string;
   revenue: number;

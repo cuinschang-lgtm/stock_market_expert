@@ -7,8 +7,8 @@ export const fetchCache = "force-no-store";
 
 export async function GET(_request: Request, { params }: { params: { symbol: string } }) {
   try {
-    const kline = await getMarketDataProvider().getKline(decodeURIComponent(params.symbol));
-    return jsonNoStore({ kline });
+    const result = await getMarketDataProvider().getKlineWithMeta(decodeURIComponent(params.symbol));
+    return jsonNoStore({ kline: result.data, meta: result.meta });
   } catch (error) {
     return apiError(error, 404);
   }

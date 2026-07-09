@@ -7,8 +7,8 @@ export const fetchCache = "force-no-store";
 
 export async function GET(_request: Request, { params }: { params: { symbol: string } }) {
   try {
-    const quote = await getMarketDataProvider().getQuote(decodeURIComponent(params.symbol));
-    return jsonNoStore({ quote });
+    const result = await getMarketDataProvider().getQuoteWithMeta(decodeURIComponent(params.symbol));
+    return jsonNoStore({ quote: result.data, meta: result.meta });
   } catch (error) {
     return apiError(error, 404);
   }

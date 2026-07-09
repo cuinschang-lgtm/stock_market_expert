@@ -268,8 +268,10 @@ export class YahooFinanceProvider implements MarketDataProvider {
       const quote = mapQuote(yahoo, q);
       if (quote.price > 0) return quote;
       throw new Error(`Empty quote: ${symbol}`);
-    } catch {
-      if (mockQuotes[symbol]) return mockQuotes[symbol];
+    } catch (error) {
+      if (mockQuotes[symbol]) {
+        throw new Error(`Yahoo quote unavailable for ${symbol}: ${error instanceof Error ? error.message : "failed"}`);
+      }
       throw new Error(`Unknown symbol: ${symbol}`);
     }
   }
@@ -283,7 +285,6 @@ export class YahooFinanceProvider implements MarketDataProvider {
       });
       return mapKline(raw);
     } catch {
-      if (mockKlines[symbol]) return mockKlines[symbol];
       return [];
     }
   }

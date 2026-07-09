@@ -1,4 +1,4 @@
-import { Bot, CalendarDays, FileText } from "lucide-react";
+import { Bot, CalendarDays, Database, FileText } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { InlineReport } from "@/components/analyst/inline-report";
@@ -6,24 +6,36 @@ import { KlineChart } from "@/components/stocks/kline-chart";
 import { WatchlistAction } from "@/components/stocks/watchlist-action";
 import { MetricCard } from "@/components/ui/metric-card";
 import { formatCurrency, formatSignedPercent } from "@/lib/formatters";
+import type { MarketDataMeta } from "@/lib/types";
 import { getMarketDataProvider } from "@/server/market-data/provider";
+
+function dataSourceTone(meta?: MarketDataMeta | null) {
+  if (!meta) return "border-line bg-white text-muted";
+  if (meta.mode === "demo") return "border-amber-200 bg-amber-50 text-amber-800";
+  if (meta.fallbackUsed) return "border-sky-200 bg-sky-50 text-sky-800";
+  return "border-emerald-200 bg-emerald-50 text-emerald-800";
+}
 
 export default async function StockDetailPage({ params }: { params: { symbol: string } }) {
   const provider = getMarketDataProvider();
   const symbol = decodeURIComponent(params.symbol);
 
   // 逐个安全获取，任一失败不准带崩整页
-  const [quote, kline, financials, events] = await Promise.all([
-    provider.getQuote(symbol).catch(() => null),
-    provider.getKline(symbol).catch(() => []),
+  const [quoteResult, klineResult, financials, events] = await Promise.all([
+    provider.getQuoteWithMeta(symbol).catch(() => null),
+    provider.getKlineWithMeta(symbol).catch(() => null),
     provider.getFinancials(symbol).catch(() => []),
     provider.getCompanyEvents(symbol).catch(() => []),
   ]);
 
-  if (!quote) notFound();
+  if (!quoteResult) notFound();
 
+  const quote = quoteResult.data;
+  const kline = klineResult?.data ?? [];
   const hasLiveData = quote.price > 0;
   const latest = financials[0];
+  const sourceMeta = quoteResult.meta;
+  const klineMeta = klineResult?.meta;
 
   return (
     <div className="space-y-6">
@@ -44,6 +56,14 @@ export default async function StockDetailPage({ params }: { params: { symbol: st
               <span>成交额 {quote.turnover}</span>
               <span>更新 {quote.updatedAt}</span>
             </div>
+            <div className={`mt-4 inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${dataSourceTone(sourceMeta)}`}>
+              <Database className="h-3.5 w-3.5" />
+              <span>
+                数据源：{sourceMeta.sourceLabel}
+                {sourceMeta.fallbackUsed ? "（备用）" : ""}
+              </span>
+              <span className="font-normal opacity-80">{new Date(sourceMeta.timestamp).toLocaleString("zh-CN")}</span>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <WatchlistAction quote={quote} />
@@ -58,9 +78,9 @@ export default async function StockDetailPage({ params }: { params: { symbol: st
         </div>
       </section>
 
-      {!hasLiveData && (
+      {(!hasLiveData || sourceMeta.mode === "demo" || sourceMeta.fallbackUsed) && (
         <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          实时行情暂时不可用（数据源未连接），以下展示为本地缓存数据。AI 分析功能不受影响。
+          {sourceMeta.message ?? "实时行情暂时不可用，以下展示为备用数据。AI 分析功能不受影响。"}
         </section>
       )}
 
@@ -79,6 +99,12 @@ export default async function StockDetailPage({ params }: { params: { symbol: st
       <section className="grid gap-6 xl:grid-cols-[1.35fr_0.9fr]">
         <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-ink">近 7 日价格</h2>
+          {klineMeta && (
+            <div className={`mt-3 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold ${dataSourceTone(klineMeta)}`}>
+              <Database className="h-3.5 w-3.5" />
+              K 线来源：{klineMeta.sourceLabel}{klineMeta.fallbackUsed ? "（备用）" : ""}
+            </div>
+          )}
           <div className="mt-4">
             <KlineChart data={kline} />
           </div>
