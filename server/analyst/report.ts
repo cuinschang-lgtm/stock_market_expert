@@ -37,20 +37,45 @@ function isDeepSeekConfigured(): boolean {
 
 // --------------- 辅助函数 ---------------
 
+function isFiniteNumber(value: number) {
+  return Number.isFinite(value);
+}
+
+function formatOptionalNumber(value: number, digits = 1) {
+  return isFiniteNumber(value) && value > 0 ? value.toFixed(digits) : "暂不可用";
+}
+
+function formatOptionalPercent(value: number, digits = 2) {
+  return isFiniteNumber(value) ? `${value.toFixed(digits)}%` : "暂不可用";
+}
+
+function formatQuoteRange(quote: QuoteSnapshot) {
+  if (
+    !isFiniteNumber(quote.yearLow) ||
+    !isFiniteNumber(quote.yearHigh) ||
+    quote.yearLow <= 0 ||
+    quote.yearHigh <= 0 ||
+    quote.yearHigh < quote.yearLow
+  ) {
+    return "暂不可用";
+  }
+  return `${quote.currency} ${quote.yearLow.toFixed(2)} - ${quote.yearHigh.toFixed(2)}`;
+}
+
 function formatQuote(quote: QuoteSnapshot): string {
   return [
     `【${quote.name} (${quote.symbol})】`,
     `市场: ${quote.market} · ${quote.exchange}`,
     `行业: ${quote.sector}`,
     `最新价: ${quote.currency} ${quote.price.toFixed(2)}`,
-    `当日涨跌: ${quote.changePercent.toFixed(2)}%`,
-    `近7日涨跌: ${quote.weekChangePercent.toFixed(2)}%`,
-    `52周区间: ${quote.currency} ${quote.yearLow.toFixed(2)} - ${quote.yearHigh.toFixed(2)}`,
+    `当日涨跌: ${formatOptionalPercent(quote.changePercent)}`,
+    `近7日涨跌: ${formatOptionalPercent(quote.weekChangePercent)}`,
+    `52周区间: ${formatQuoteRange(quote)}`,
     `成交额: ${quote.turnover}`,
-    `PE-TTM: ${quote.peTtm.toFixed(1)}`,
-    `PB: ${quote.pb.toFixed(1)}`,
-    `PS: ${quote.ps.toFixed(1)}`,
-    `股息率: ${quote.dividendYield.toFixed(2)}%`,
+    `PE-TTM: ${formatOptionalNumber(quote.peTtm)}`,
+    `PB: ${formatOptionalNumber(quote.pb)}`,
+    `PS: ${formatOptionalNumber(quote.ps)}`,
+    `股息率: ${formatOptionalPercent(quote.dividendYield)}`,
     `数据更新时间: ${quote.updatedAt}`,
   ].join("\n");
 }
@@ -271,15 +296,15 @@ ${formatEvents(companyEvents)}
       {
         title: "当前位置",
         points: [
-          `最新价 ${quote.currency} ${quote.price.toFixed(2)}，当日涨跌幅 ${quote.changePercent.toFixed(2)}%。`,
-          `近 7 日涨跌幅 ${quote.weekChangePercent.toFixed(2)}%，52 周区间为 ${quote.currency} ${quote.yearLow.toFixed(2)} - ${quote.yearHigh.toFixed(2)}。`,
+          `最新价 ${quote.currency} ${quote.price.toFixed(2)}，当日涨跌幅 ${formatOptionalPercent(quote.changePercent)}。`,
+          `近 7 日涨跌幅 ${formatOptionalPercent(quote.weekChangePercent)}，52 周区间为 ${formatQuoteRange(quote)}。`,
           `成交额 ${quote.turnover}，需要结合后续成交放大或缩量判断趋势质量。`,
         ],
       },
       {
         title: "估值水位",
         points: [
-          `PE-TTM ${quote.peTtm.toFixed(1)}，PB ${quote.pb.toFixed(1)}，PS ${quote.ps.toFixed(1)}，股息率 ${quote.dividendYield.toFixed(2)}%。`,
+          `PE-TTM ${formatOptionalNumber(quote.peTtm)}，PB ${formatOptionalNumber(quote.pb)}，PS ${formatOptionalNumber(quote.ps)}，股息率 ${formatOptionalPercent(quote.dividendYield)}。`,
           latest
             ? `最近一期 ${latest.period} 收入 ${latest.currency} ${latest.revenue.toFixed(1)} 亿，同比 ${latest.revenueYoY.toFixed(1)}%；净利润 ${latest.currency} ${latest.netIncome.toFixed(1)} 亿，同比 ${latest.netIncomeYoY.toFixed(1)}%。`
             : "暂无可用财务快照，估值判断需要等待财务数据源补齐后复核。",
@@ -338,7 +363,7 @@ export async function generateSectorFastReport(sectorId: string): Promise<Analys
         .map(
           (q) =>
             `${q.name}(${q.symbol}): 最新价 ${q.currency}${q.price.toFixed(2)}, ` +
-            `近7日 ${q.weekChangePercent.toFixed(2)}%, PE-TTM ${q.peTtm.toFixed(1)}`
+            `近7日 ${formatOptionalPercent(q.weekChangePercent)}, PE-TTM ${formatOptionalNumber(q.peTtm)}`
         )
         .join("\n");
 
@@ -371,7 +396,7 @@ ${leaderData}
             : [
                 { title: "主题定位", points: [sector.description] },
                 { title: "跟踪变量", points: sector.trends },
-                { title: "龙头观察", points: leaderQuotes.map((q) => `${q.name} (${q.symbol}) 7日 ${q.weekChangePercent.toFixed(2)}%`) },
+                { title: "龙头观察", points: leaderQuotes.map((q) => `${q.name} (${q.symbol}) 7日 ${formatOptionalPercent(q.weekChangePercent)}`) },
                 { title: "风险提示", points: [...sector.risks] },
               ],
         sources: [
@@ -418,7 +443,7 @@ ${leaderData}
         title: "代表标的观察",
         points: leaderQuotes.map(
           (quote) =>
-            `${quote.name}：最新价 ${quote.currency} ${quote.price.toFixed(2)}，近 7 日 ${quote.weekChangePercent.toFixed(2)}%，PE-TTM ${quote.peTtm.toFixed(1)}。`
+            `${quote.name}：最新价 ${quote.currency} ${quote.price.toFixed(2)}，近 7 日 ${formatOptionalPercent(quote.weekChangePercent)}，PE-TTM ${formatOptionalNumber(quote.peTtm)}。`
         ),
       },
       {

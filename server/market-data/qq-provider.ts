@@ -234,6 +234,16 @@ interface QQQuoteRaw {
   updatedAt: string;
 }
 
+function finiteNumber(value: unknown, fallback = 0) {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function finitePositive(value: unknown) {
+  const number = finiteNumber(value, 0);
+  return number > 0 ? number : 0;
+}
+
 function normalizeUpdatedAt(raw: string | undefined): string {
   const now = new Date().toISOString();
   if (!raw) return now;
@@ -305,16 +315,16 @@ async function fetchQQQuotes(tickers: string[]): Promise<Map<string, QQQuoteRaw>
       // 字段解析（腾讯 A股/港股/美股格式略有不同，但前几个字段统一）
       const parsed: QQQuoteRaw = {
         name:            fields[1] ?? "",
-        price:           parseFloat(fields[3] ?? "0"),
-        change:          parseFloat(fields[31] ?? "0"),   // 涨跌额
-        changePercent:   parseFloat(fields[32] ?? "0"),   // 涨跌幅%
-        high:            parseFloat(fields[33] ?? "0"),    // 今日最高
-        low:             parseFloat(fields[34] ?? "0"),    // 今日最低
-        volume:          parseFloat(fields[6] ?? "0"),     // 成交量(股)
-        turnover:        parseFloat(fields[37] ?? "0"),    // 成交额(万)
-        peTtm:           parseFloat(fields[39] ?? "0"),    // PE-TTM
-        ytdHigh:         parseFloat(fields[41] ?? "0"),    // 52周高
-        ytdLow:          parseFloat(fields[42] ?? "0"),    // 52周低
+        price:           finitePositive(fields[3]),
+        change:          finiteNumber(fields[31]),   // 涨跌额
+        changePercent:   finiteNumber(fields[32]),   // 涨跌幅%
+        high:            finitePositive(fields[33]),  // 今日最高
+        low:             finitePositive(fields[34]),  // 今日最低
+        volume:          finitePositive(fields[6]),   // 成交量(股)
+        turnover:        finitePositive(fields[37]),  // 成交额(万)
+        peTtm:           finitePositive(fields[39]),  // PE-TTM
+        ytdHigh:         finitePositive(fields[41]),  // 52周高
+        ytdLow:          finitePositive(fields[42]),  // 52周低
         currency:        fields[47] ?? "CNY",              // 货币
         updatedAt:       normalizeUpdatedAt(fields[30]),   // 统一为可解析时间串（给 cnDateTime 用）
       };
@@ -345,6 +355,12 @@ async function batchGetQuotes(symbols: string[]): Promise<Map<string, QuoteSnaps
     if (!raw) continue;
 
     const entry = STOCKS[symbol];
+    const yearHigh = raw.ytdHigh >= raw.price ? raw.ytdHigh : 0;
+    const yearLow = raw.ytdLow > 0 && raw.ytdLow <= raw.price ? raw.ytdLow : 0;
+    const turnover = raw.turnover > 0 && raw.turnover < 10_000_000
+      ? `${(raw.turnover / 10000).toFixed(1)}亿`
+      : "—";
+
     result.set(symbol, {
       symbol,
       name:            raw.name || entry?.name || symbol,
@@ -356,12 +372,12 @@ async function batchGetQuotes(symbols: string[]): Promise<Map<string, QuoteSnaps
       change:          raw.change,
       changePercent:   raw.changePercent,
       volume:          String(Math.round(raw.volume)),
-      turnover:        raw.turnover > 0 ? `${(raw.turnover / 10000).toFixed(1)}亿` : "—",
+      turnover,
       peTtm:           raw.peTtm,
       pb:              0, ps: 0, dividendYield: 0,
       weekChangePercent: raw.changePercent,
-      yearHigh:        raw.ytdHigh,
-      yearLow:         raw.ytdLow,
+      yearHigh,
+      yearLow,
       updatedAt:       raw.updatedAt || new Date().toISOString().slice(0, 10),
     });
   }

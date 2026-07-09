@@ -16,6 +16,21 @@ function dataSourceTone(meta?: MarketDataMeta | null) {
   return "border-emerald-200 bg-emerald-50 text-emerald-800";
 }
 
+function metricNumber(value: number, digits = 1) {
+  return Number.isFinite(value) && value > 0 ? value.toFixed(digits) : "-";
+}
+
+function metricPercent(value: number) {
+  return Number.isFinite(value) ? `${value.toFixed(2)}%` : "-";
+}
+
+function rangeDetail(currency: string, low: number, high: number) {
+  if (!Number.isFinite(low) || !Number.isFinite(high) || low <= 0 || high <= 0 || high < low) {
+    return "52周区间暂不可用";
+  }
+  return `${currency} ${low.toFixed(2)} - ${high.toFixed(2)}`;
+}
+
 export default async function StockDetailPage({ params }: { params: { symbol: string } }) {
   const provider = getMarketDataProvider();
   const symbol = decodeURIComponent(params.symbol);
@@ -85,14 +100,14 @@ export default async function StockDetailPage({ params }: { params: { symbol: st
       )}
 
       <section className="grid gap-4 md:grid-cols-4">
-        <MetricCard label="PE-TTM" value={quote.peTtm.toFixed(1)} detail="估值倍数" />
-        <MetricCard label="PB" value={quote.pb.toFixed(1)} detail="净资产倍数" />
-        <MetricCard label="股息率" value={`${quote.dividendYield.toFixed(2)}%`} detail="TTM" />
+        <MetricCard label="PE-TTM" value={metricNumber(quote.peTtm)} detail="估值倍数" />
+        <MetricCard label="PB" value={metricNumber(quote.pb)} detail="净资产倍数" />
+        <MetricCard label="股息率" value={metricPercent(quote.dividendYield)} detail="TTM" />
         <MetricCard
           label="7日涨跌"
           value={formatSignedPercent(quote.weekChangePercent)}
           tone={quote.weekChangePercent >= 0 ? "up" : "down"}
-          detail={`${quote.currency} ${quote.yearLow.toFixed(2)} - ${quote.yearHigh.toFixed(2)}`}
+          detail={rangeDetail(quote.currency, quote.yearLow, quote.yearHigh)}
         />
       </section>
 
