@@ -1,7 +1,7 @@
 import type { MarketDataProvider } from "@/lib/types";
 import { ChinaDataProvider } from "./qq-provider";
 
-// Mock provider 作为兜底
+// Mock provider as fallback
 import {
   dashboard,
   events,
@@ -72,29 +72,81 @@ class MockMarketDataProvider implements MarketDataProvider {
   }
 }
 
+/**
+ * 8 秒超时包装器 —— 防止 Vercel Hobby (10s 限制) 卡死
+ */
+class TimeoutProvider implements MarketDataProvider {
+  constructor(private inner: MarketDataProvider, private timeoutMs = 8000) {}
+
+  private async withTimeout<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+    try {
+      return await Promise.race([
+        fn(),
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error("TIMEOUT")), this.timeoutMs)
+        ),
+      ]);
+    } catch {
+      return fallback;
+    }
+  }
+
+  async searchSymbols(query: string): Promise<SymbolSearchResult[]> {
+    return this.withTimeout(() => this.inner.searchSymbols(query), []);
+  }
+  async getQuote(symbol: string): Promise<QuoteSnapshot> {
+    // 不在 mock 中的股票，用 5s 短超时 + 回退
+    const result = await this.withTimeout(() => this.inner.getQuote(symbol), null as unknown as QuoteSnapshot);
+    if (result) return result;
+    // 回退到 mock
+    if (quotes[symbol]) return quotes[symbol];
+    throw new Error(`Unknown symbol: ${symbol}`);
+  }
+  async getKline(symbol: string): Promise<KlinePoint[]> {
+    return this.withTimeout(() => this.inner.getKline(symbol), []);
+  }
+  async getFinancials(symbol: string): Promise<FinancialSnapshot[]> {
+    return this.withTimeout(() => this.inner.getFinancials(symbol), []);
+  }
+  async getCompanyEvents(symbol: string): Promise<CompanyEvent[]> {
+    return this.withTimeout(() => this.inner.getCompanyEvents(symbol), []);
+  }
+  async listSectorOverviews(): Promise<SectorOverview[]> {
+    return this.withTimeout(() => this.inner.listSectorOverviews(), Object.values(sectors));
+  }
+  async getSectorOverview(sectorId: string): Promise<SectorOverview> {
+    return this.withTimeout(() => this.inner.getSectorOverview(sectorId), sectors.ai!);
+  }
+  async getDashboardData(): Promise<DashboardData> {
+    return this.withTimeout(() => this.inner.getDashboardData(), dashboard);
+  }
+}
+
 let _provider: MarketDataProvider | null = null;
 
 export function getMarketDataProvider(): MarketDataProvider {
   if (!_provider) {
     const src = process.env.DATA_SOURCE ?? "qq";
+    let inner: MarketDataProvider;
     switch (src) {
       case "mock":
-        _provider = new MockMarketDataProvider();
+        inner = new MockMarketDataProvider();
         break;
       case "yahoo":
-        // 尝试加载 Yahoo provider（如未安装则回退 qq）
         try {
           const { YahooFinanceProvider } = require("./yahoo-provider");
-          _provider = new YahooFinanceProvider();
+          inner = new YahooFinanceProvider();
         } catch {
-          console.warn("[provider] Yahoo module not available, falling back to qq");
-          _provider = new ChinaDataProvider();
+          console.warn("[provider] Yahoo module not available, using qq");
+          inner = new ChinaDataProvider();
         }
         break;
       case "qq":
       default:
-        _provider = new ChinaDataProvider();
+        inner = new ChinaDataProvider();
     }
+    // 统一包 8s 超时，防止卡 Vercel 10s 限制
+    _provider = new TimeoutProvider(inner, 8000);
   }
   return _provider!;
 }

@@ -46,7 +46,7 @@ async function httpGet(url: string): Promise<{ buffer: Buffer; statusCode: numbe
       // fall through to directGet
     }
   }
-  return directGet(url, 10000);
+  return directGet(url, 6000); // 6s 短超时，Vercel 美国节点访问中国 API 大概率失败
 }
 
 import type {
