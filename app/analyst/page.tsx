@@ -5,6 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { ReportView } from "@/components/analyst/report-view";
 import { SaveReportAction } from "@/components/analyst/save-report-action";
+import {
+  invalidStockSymbolMessage,
+  isSupportedStockSymbol,
+  normalizeStockSymbolCandidate,
+} from "@/lib/symbols";
 import type { AnalystReport } from "@/lib/types";
 
 const QUICK_SYMBOLS = ["hk00700", "sh600519", "usNVDA", "sz300750"];
@@ -32,11 +37,18 @@ function AnalystContent() {
     setError(null);
     setReport(null);
 
+    if (!isSupportedStockSymbol(sym)) {
+      setError(invalidStockSymbolMessage(sym));
+      setLoading(false);
+      return;
+    }
+
+    const normalizedSymbol = normalizeStockSymbolCandidate(sym);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60000); // 60s 总超时
 
     try {
-      const res = await fetch(`/api/analysis/stock/${encodeURIComponent(sym)}`, {
+      const res = await fetch(`/api/analysis/stock/${encodeURIComponent(normalizedSymbol)}`, {
         signal: controller.signal,
         cache: "no-store",
       });
