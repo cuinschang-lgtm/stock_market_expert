@@ -32,6 +32,23 @@ function directGet(url: string, timeoutMs = 10000): Promise<{ buffer: Buffer; st
   });
 }
 
+/**
+ * 通用 GET 请求：优先用 fetch（Vercel 上更稳定），失败回退原生 https
+ */
+async function httpGet(url: string): Promise<{ buffer: Buffer; statusCode: number }> {
+  // Vercel 生产环境优先用 fetch
+  if (process.env.VERCEL) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      const buf = Buffer.from(await res.arrayBuffer());
+      return { buffer: buf, statusCode: res.status };
+    } catch {
+      // fall through to directGet
+    }
+  }
+  return directGet(url, 10000);
+}
+
 import type {
   CompanyEvent,
   DashboardData,
@@ -226,10 +243,10 @@ async function fetchQQQuotes(tickers: string[]): Promise<Map<string, QQQuoteRaw>
 
   try {
     // 使用原生 https 绕过系统代理
-    const { buffer } = await directGet(url);
+    const { buffer } = await httpGet(url);
     const text = iconv.decode(buffer, "gbk");
 
-    // 解析每一行 v_xxx="..." 格式
+    // 解析每一行 v_xxx="..." 格式（fetchQQQuotes）
     const re = /v_([^=]+?)="([^"]*)"/g;
     let m: RegExpExecArray | null;
     while ((m = re.exec(text)) !== null) {
@@ -324,7 +341,7 @@ async function tryQuote(symbol: string): Promise<boolean> {
 async function fetchKLineGeneric(ticker: string): Promise<KlinePoint[]> {
   const url = `https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=${ticker},day,,,30`;
   try {
-    const { buffer } = await directGet(url);
+    const { buffer } = await httpGet(url);
     const text = iconv.decode(buffer, "gbk");
     const data = JSON.parse(text);
     const list = data?.data?.[ticker]?.day ?? data?.data?.[ticker]?.qfqday ?? [];
@@ -363,10 +380,10 @@ async function sinaSearch(query: string): Promise<SinaSearchResult[]> {
   if (!q) return [];
 
   try {
-    const { buffer } = await directGet(
-      `https://suggest3.sinajs.cn/suggest/type=&key=${q}`,
-      5000
-    );
+    const url = `https://suggest3.sinajs.cn/suggest/type=&key=${q}`;
+    const { buffer } = process.env.VERCEL
+      ? await (async () => { try { const r = await fetch(url); return { buffer: Buffer.from(await r.arrayBuffer()), statusCode: r.status }; } catch { return directGet(url, 5000); } })()
+      : await directGet(url, 5000);
     const text = iconv.decode(buffer, "gbk");
     const raw = text.replace(/^var\s+suggestvalue="/, "").replace(/"$/, "").trim();
     if (!raw) return [];

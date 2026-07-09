@@ -29,7 +29,7 @@ export default async function StockDetailPage({ params }: { params: { symbol: st
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="text-sm font-semibold text-accent">
-              {quote.market} · {quote.exchange} · {quote.sector}
+              {quote.market} · {quote.exchange}{quote.sector ? ` · ${quote.sector}` : ""}
             </div>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink">
               {quote.name} <span className="text-xl text-muted">{quote.symbol}</span>
@@ -81,22 +81,25 @@ export default async function StockDetailPage({ params }: { params: { symbol: st
             <FileText className="h-5 w-5 text-accent" />
             <h2 className="text-lg font-semibold text-ink">最近财务摘要</h2>
           </div>
-          <div className="space-y-3 text-sm">
-            <div className="rounded-lg bg-panel p-3">
-              <div className="font-semibold text-ink">{latest.period}</div>
-              <div className="mt-2 grid grid-cols-2 gap-3 text-muted">
-                <div>收入：{latest.currency} {latest.revenue.toFixed(1)} 亿</div>
-                <div>同比：{formatSignedPercent(latest.revenueYoY)}</div>
-                <div>净利润：{latest.currency} {latest.netIncome.toFixed(1)} 亿</div>
-                <div>同比：{formatSignedPercent(latest.netIncomeYoY)}</div>
-                <div>毛利率：{latest.grossMargin.toFixed(1)}%</div>
-                <div>经营现金流：{latest.currency} {latest.operatingCashFlow.toFixed(1)} 亿</div>
+          {latest ? (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-lg bg-panel p-3">
+                <div className="font-semibold text-ink">{latest.period}</div>
+                <div className="mt-2 grid grid-cols-2 gap-3 text-muted">
+                  <div>收入：{latest.currency} {latest.revenue.toFixed(1)} 亿</div>
+                  <div>同比：{formatSignedPercent(latest.revenueYoY)}</div>
+                  <div>净利润：{latest.currency} {latest.netIncome.toFixed(1)} 亿</div>
+                  <div>同比：{formatSignedPercent(latest.netIncomeYoY)}</div>
+                  <div>毛利率：{latest.grossMargin.toFixed(1)}%</div>
+                  <div>经营现金流：{latest.currency} {latest.operatingCashFlow.toFixed(1)} 亿</div>
+                </div>
               </div>
             </div>
-            <p className="leading-6 text-muted">
-              财务数据当前为 mock，用来验证展示结构。真实接入后应保留财报期、货币单位和来源链接。
+          ) : (
+            <p className="mt-4 text-sm leading-6 text-muted">
+              暂无财务数据。系统正在对接 Tick Data，后续将自动更新。
             </p>
-          </div>
+          )}
         </div>
       </section>
 
