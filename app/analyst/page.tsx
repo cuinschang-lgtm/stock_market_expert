@@ -1,16 +1,17 @@
 "use client";
 
 import { Bot, Loader2, RotateCw } from "lucide-react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { ReportView } from "@/components/analyst/report-view";
 import { SaveReportAction } from "@/components/analyst/save-report-action";
 import type { AnalystReport } from "@/lib/types";
 
 const QUICK_SYMBOLS = ["hk00700", "sh600519", "usNVDA", "sz300750"];
 
-export default function AnalystPage() {
+// Next.js 14 需要将 useSearchParams() 包裹在 Suspense 内
+function AnalystContent() {
+
   const searchParams = useSearchParams();
   const router = useRouter();
   const symbol = searchParams.get("symbol") ?? "hk00700";
@@ -139,5 +140,19 @@ export default function AnalystPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function AnalystPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-accent" />
+        </div>
+      }
+    >
+      <AnalystContent />
+    </Suspense>
   );
 }
