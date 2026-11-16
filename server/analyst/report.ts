@@ -123,6 +123,24 @@ async function callDeepSeek(
   return content.trim();
 }
 
+/** 去除模型输出中混入的 markdown 标记，保证摘要/条目以纯文本展示 */
+function stripMarkdown(text: string): string {
+  return text
+    .split(/\r?\n/)
+    .map((line) =>
+      line
+        .replace(/^#{1,6}\s*/, "") // 标题井号
+        .replace(/^\s*[-*]\s+/, "") // 列表符
+        .replace(/\*\*([^*]+)\*\*/g, "$1") // 加粗
+        .replace(/^>\s?/, "") // 引用
+        .trim()
+    )
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function parseAnalystReport(rawText: string): {
   summary: string;
   sections: Array<{ title: string; points: string[] }>;
@@ -153,14 +171,20 @@ function parseAnalystReport(rawText: string): {
       const points = body
         .split(/\r?\n/)
         .filter((line) => line.trim().startsWith("-") || /^\d+[\.\)]\s/.test(line.trim()))
-        .map((line) => line.replace(/^[-‐]\s*/, "").replace(/^\d+[\.\)]\s*/, "").trim())
+        .map((line) =>
+          line
+            .replace(/^[-‐*]\s*/, "")
+            .replace(/^\d+[\.\)]\s*/, "")
+            .replace(/\*\*([^*]+)\*\*/g, "$1")
+            .trim()
+        )
         .filter(Boolean);
 
       if (points.length > 0) {
         sections.push({ title, points });
       } else {
         // 如果没有列表项，整个段落作为一个 point
-        const bodyText = body.replace(/^##\s*[^\n]*\n?/, "").trim();
+        const bodyText = stripMarkdown(body.replace(/^##\s*[^\n]*\n?/, ""));
         if (bodyText) {
           sections.push({ title, points: [bodyText] });
         }
@@ -169,7 +193,7 @@ function parseAnalystReport(rawText: string): {
 
     // 第一个章节之前的内容作为摘要
     if (headings.length > 0) {
-      summary = rawText.slice(0, headings[0].index).trim();
+      summary = stripMarkdown(rawText.slice(0, headings[0].index));
     }
   } else {
     // 没有 ## 格式，按段落智能分块
@@ -177,7 +201,7 @@ function parseAnalystReport(rawText: string): {
 
     // 第一段作为摘要
     if (paragraphs.length > 0) {
-      summary = paragraphs[0].trim();
+      summary = stripMarkdown(paragraphs[0]);
     }
 
     // 剩余段落按关键词匹配到对应模块
@@ -191,9 +215,9 @@ function parseAnalystReport(rawText: string): {
       if (m?.[1]) {
         const lines = m[1]
           .split(/\r?\n/)
-          .map((l) => l.replace(/^[-‐]\s*/, "").trim())
+          .map((l) => l.replace(/^[-‐*]\s*/, "").replace(/\*\*([^*]+)\*\*/g, "$1").trim())
           .filter(Boolean);
-        sections.push({ title, points: lines.length > 0 ? lines : [m[1].trim()] });
+        sections.push({ title, points: lines.length > 0 ? lines : [stripMarkdown(m[1])] });
       }
     }
 
@@ -203,7 +227,12 @@ function parseAnalystReport(rawText: string): {
     }
   }
 
-  return { summary: summary || rawText.slice(0, 200), sections };
+  // 摘要兜底：优先取正文纯文本，绝不输出带 markdown 标记的原文
+  const cleanSummary =
+    summary ||
+    sections[0]?.points[0] ||
+    stripMarkdown(rawText).slice(0, 200);
+  return { summary: cleanSummary, sections };
 }
 
 // --------------- 个股快速分析 ---------------

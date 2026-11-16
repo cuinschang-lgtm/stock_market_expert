@@ -402,7 +402,7 @@ async function tryQuote(symbol: string): Promise<boolean> {
  * 获取日K线 (腾讯财经)
  */
 async function fetchKLineGeneric(ticker: string): Promise<KlinePoint[]> {
-  const url = `https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=${ticker},day,,,30`;
+  const url = `https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=${ticker},day,,,30,qfq`;
   try {
     const { buffer } = await httpGet(url);
     const text = iconv.decode(buffer, "gbk");
@@ -564,10 +564,17 @@ export class ChinaDataProvider implements MarketDataProvider {
       if (entry) return [{ symbol: alias, name: entry.name, market: entry.market, exchange: entry.exchange, sector: entry.sector, currency: entry.currency }];
     }
 
-    // 2. 新浪远程搜索（覆盖全量 A股/港股/美股）
+    // 2. 新浪远程搜索（覆盖全量 A股/港股/美股），按 symbol 去重
     const sinaResults = await sinaSearch(query.trim());
     if (sinaResults.length > 0) {
-      return enrichWithQQTicker(sinaResults);
+      const seen = new Set<string>();
+      const unique = sinaResults.filter((item) => {
+        const key = item.symbol;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      return enrichWithQQTicker(unique);
     }
 
     // 3. 本地模糊兜底
