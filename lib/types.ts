@@ -124,6 +124,17 @@ export interface UpdateResearchNoteInput {
   thesis?: InvestmentThesis | null;
 }
 
+export interface CreateResearchNoteInput {
+  title: string;
+  symbol?: string;
+  tag: string;
+  excerpt: string;
+  body?: string | null;
+  status?: ResearchNoteStatus;
+  thesis?: InvestmentThesis | null;
+  report?: AnalystReport | null;
+}
+
 export interface MarketIndex {
   name: string;
   symbol: string;

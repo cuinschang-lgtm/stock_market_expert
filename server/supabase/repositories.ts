@@ -1,5 +1,12 @@
 import { unstable_noStore as noStore } from "next/cache";
-import type { AnalystReport, InvestmentThesis, ResearchNote, QuoteSnapshot, UpdateResearchNoteInput } from "@/lib/types";
+import type {
+  AnalystReport,
+  CreateResearchNoteInput,
+  InvestmentThesis,
+  ResearchNote,
+  QuoteSnapshot,
+  UpdateResearchNoteInput
+} from "@/lib/types";
 import { DEFAULT_USER_ID, getSupabaseAdmin, isSupabaseConfigured } from "./client";
 
 export interface WatchlistRecord {
@@ -103,7 +110,7 @@ export async function listWatchlistItems(userId = DEFAULT_USER_ID) {
   return { configured: true, items: (data as WatchlistRecord[]).map(mapWatchlistRecord) };
 }
 
-export async function upsertWatchlistItem(quote: QuoteSnapshot, userId = DEFAULT_USER_ID) {
+export async function upsertWatchlistItem(quote: QuoteSnapshot, group = "我的自选", userId = DEFAULT_USER_ID) {
   noStore();
   if (!isSupabaseConfigured()) return { configured: false, item: null };
   const supabase = getSupabaseAdmin();
@@ -117,7 +124,7 @@ export async function upsertWatchlistItem(quote: QuoteSnapshot, userId = DEFAULT
         symbol: quote.symbol,
         name: quote.name,
         market: quote.market,
-        group_name: "我的自选",
+        group_name: group.trim() || "我的自选",
         price: quote.price,
         change_percent: quote.changePercent,
         currency: quote.currency,
@@ -130,6 +137,26 @@ export async function upsertWatchlistItem(quote: QuoteSnapshot, userId = DEFAULT
 
   if (error) throw error;
   return { configured: true, item: mapWatchlistRecord(data as WatchlistRecord) };
+}
+
+export async function updateWatchlistItemGroup(symbol: string, group: string, userId = DEFAULT_USER_ID) {
+  noStore();
+  const cleanGroup = group.trim();
+  if (!cleanGroup) throw new Error("group is required");
+  if (!isSupabaseConfigured()) return { configured: false, item: null };
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false, item: null };
+
+  const { data, error } = await supabase
+    .from("watchlist_items")
+    .update({ group_name: cleanGroup, updated_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .eq("symbol", symbol)
+    .select("*")
+    .maybeSingle();
+
+  if (error) throw error;
+  return { configured: true, item: data ? mapWatchlistRecord(data as WatchlistRecord) : null };
 }
 
 export async function deleteWatchlistItem(symbol: string, userId = DEFAULT_USER_ID) {
@@ -197,6 +224,38 @@ export async function insertResearchNote(report: AnalystReport, userId = DEFAULT
       tag: "AI 分析",
       excerpt: report.summary,
       report
+    })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return { configured: true, note: mapNoteRecord(data as NoteRecord) };
+}
+
+export async function createResearchNote(input: CreateResearchNoteInput, userId = DEFAULT_USER_ID) {
+  noStore();
+  const title = input.title.trim();
+  const tag = input.tag.trim();
+  const excerpt = input.excerpt.trim();
+  if (!title) throw new Error("title is required");
+  if (!tag) throw new Error("tag is required");
+  if (!excerpt) throw new Error("excerpt is required");
+  if (!isSupabaseConfigured()) return { configured: false, note: null };
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { configured: false, note: null };
+
+  const { data, error } = await supabase
+    .from("research_notes")
+    .insert({
+      user_id: userId,
+      title,
+      symbol: input.symbol?.trim() || null,
+      tag,
+      excerpt,
+      body: input.body?.trim() || null,
+      status: input.status ?? "active",
+      thesis: input.thesis ? normalizeThesis(input.thesis) : null,
+      report: input.report ?? null
     })
     .select("*")
     .single();
