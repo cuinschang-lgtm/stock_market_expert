@@ -14,7 +14,7 @@ export default async function SectorDetailPage({ params }: { params: { id: strin
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-line bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-line bg-panel p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="flex items-center gap-2 text-sm font-semibold text-accent">
@@ -33,7 +33,7 @@ export default async function SectorDetailPage({ params }: { params: { id: strin
             </Link>
             <Link
               href={`/analyst?symbol=${detail.leaders[0]?.symbol ?? "hk00700"}`}
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"
+              className="inline-flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-ink transition hover:bg-accent-hover"
             >
               <Bot className="h-4 w-4" />
               分析龙头
@@ -55,7 +55,7 @@ export default async function SectorDetailPage({ params }: { params: { id: strin
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
+        <div className="rounded-lg border border-line bg-panel p-5">
           <h2 className="text-lg font-semibold text-ink">代表标的观察</h2>
           <p className="mt-1 text-sm leading-6 text-muted">
             这些标的用于验证主题变量。真实数据接入后，建议按市值、流动性、产业链位置和财报期筛选样本。
@@ -66,7 +66,7 @@ export default async function SectorDetailPage({ params }: { params: { id: strin
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
+          <div className="rounded-lg border border-line bg-panel p-5">
             <div className="mb-3 flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-accent" />
               <h2 className="text-lg font-semibold text-ink">跟踪变量</h2>
@@ -80,7 +80,7 @@ export default async function SectorDetailPage({ params }: { params: { id: strin
             </div>
           </div>
 
-          <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
+          <div className="rounded-lg border border-line bg-panel p-5">
             <div className="mb-3 flex items-center gap-2">
               <ShieldAlert className="h-5 w-5 text-warn" />
               <h2 className="text-lg font-semibold text-ink">风险边界</h2>
@@ -96,7 +96,7 @@ export default async function SectorDetailPage({ params }: { params: { id: strin
         </div>
       </section>
 
-      <section className="rounded-lg border border-line bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-line bg-panel p-5">
         <div className="mb-4 flex items-center gap-2">
           <Lightbulb className="h-5 w-5 text-warn" />
           <h2 className="text-lg font-semibold text-ink">选股研究线索</h2>
@@ -111,7 +111,7 @@ export default async function SectorDetailPage({ params }: { params: { id: strin
                 </div>
                 <Link
                   href={`/stocks/${idea.symbol}`}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-ink transition hover:bg-accent-hover"
                 >
                   个股页
                   <ArrowRight className="h-4 w-4" />
@@ -125,7 +125,7 @@ export default async function SectorDetailPage({ params }: { params: { id: strin
                   </li>
                 ))}
               </ul>
-              <div className="mt-3 rounded-lg border border-line bg-white p-3 text-xs leading-5 text-muted">
+              <div className="mt-3 rounded-lg border border-line bg-panel p-3 text-xs leading-5 text-muted">
                 风险复核：{idea.risk}
               </div>
             </article>
@@ -136,7 +136,7 @@ export default async function SectorDetailPage({ params }: { params: { id: strin
       {/* AI 专题分析：客户端异步加载 */}
       <InlineReport
         apiPath={`/api/sectors/${encodeURIComponent(sectorId)}`}
-        loadingLabel={`AI 正在生成 ${detail.sector.name} 专题分析...`}
+        loadingLabel={`AI 正在生成 ${detail.sector.name} 专题分析…`}
       />
     </div>
   );

@@ -34,7 +34,7 @@ function BulletList({ items }: { items?: string[] }) {
 
 function ReportSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="break-inside-avoid rounded-lg border border-line bg-white p-5 shadow-sm print:border-zinc-300 print:shadow-none">
+    <section className="break-inside-avoid rounded-lg border border-line bg-panel p-5 print:border-zinc-300 print:shadow-none print:bg-white print:text-zinc-800">
       <h2 className="text-base font-semibold text-ink">{title}</h2>
       <div className="mt-3">{children}</div>
     </section>
@@ -55,15 +55,15 @@ function ThesisBlock({ note }: { note: ResearchNote }) {
     <ReportSection title="投资逻辑">
       <div className="grid gap-3 text-sm text-muted sm:grid-cols-3">
         <div className="rounded-lg border border-line p-3 print:border-zinc-300">
-          <div className="text-xs font-semibold uppercase text-muted">Conviction</div>
+          <div className="text-xs font-medium text-muted">Conviction</div>
           <div className="mt-1 text-lg font-semibold text-ink">{convictionCopy[thesis.conviction ?? "medium"]}</div>
         </div>
         <div className="rounded-lg border border-line p-3 print:border-zinc-300">
-          <div className="text-xs font-semibold uppercase text-muted">Next Review</div>
+          <div className="text-xs font-medium text-muted">Next Review</div>
           <div className="mt-1 text-lg font-semibold text-ink">{thesis.nextReviewAt ?? "未设置"}</div>
         </div>
         <div className="rounded-lg border border-line p-3 print:border-zinc-300">
-          <div className="text-xs font-semibold uppercase text-muted">Updated</div>
+          <div className="text-xs font-medium text-muted">Updated</div>
           <div className="mt-1 text-lg font-semibold text-ink">{thesis.updatedAt ? cnDateTime(thesis.updatedAt) : "未记录"}</div>
         </div>
       </div>
@@ -106,7 +106,7 @@ function AiReportBlock({ note }: { note: ResearchNote }) {
     <ReportSection title="AI 分析报告">
       <div className="flex flex-col gap-2 border-b border-line pb-4 md:flex-row md:items-start md:justify-between print:border-zinc-300">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wide text-accent print:text-zinc-700">{report.intent}</div>
+          <div className="text-xs font-medium text-muted print:text-zinc-700">{report.intent}</div>
           <h3 className="mt-1 text-xl font-semibold text-ink">{report.target}</h3>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">{report.summary}</p>
         </div>
@@ -115,7 +115,7 @@ function AiReportBlock({ note }: { note: ResearchNote }) {
 
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         {report.sections.map((section) => (
-          <section key={section.title} className="break-inside-avoid rounded-lg border border-line bg-panel p-4 print:border-zinc-300 print:bg-white">
+          <section key={section.title} className="break-inside-avoid border-t border-line pt-3 print:border-zinc-300">
             <h4 className="text-sm font-semibold text-ink">{section.title}</h4>
             <div className="mt-3">
               <BulletList items={section.points} />
@@ -148,8 +148,8 @@ export default async function NoteReportPage({ params }: { params: { id: string 
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 print:max-w-none print:space-y-5">
-      <div className="print-hidden flex flex-col gap-3 rounded-lg border border-line bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <Link href={`/notes/${note.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-accent hover:text-teal-800">
+      <div className="print-hidden flex flex-col gap-3 rounded-lg border border-line bg-panel p-4 sm:flex-row sm:items-center sm:justify-between">
+        <Link href={`/notes/${note.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-accent hover:text-accent-hover">
           <ArrowLeft className="h-4 w-4" />
           返回笔记详情
         </Link>
@@ -159,10 +159,10 @@ export default async function NoteReportPage({ params }: { params: { id: string 
         </div>
       </div>
 
-      <article className="rounded-lg border border-line bg-white p-6 shadow-sm print:border-0 print:p-0 print:shadow-none">
+      <article className="rounded-lg border border-line bg-panel p-6 print:border-0 print:p-0 print:shadow-none">
         <div className="flex flex-col gap-4 border-b border-line pb-6 md:flex-row md:items-start md:justify-between print:border-zinc-300">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent print:text-zinc-700">
+            <div className="inline-flex items-center gap-2 text-xs font-medium text-muted print:text-zinc-700">
               <FileText className="h-4 w-4" />
               {note.tag}
             </div>
@@ -178,7 +178,7 @@ export default async function NoteReportPage({ params }: { params: { id: string 
             {note.symbol ? (
               <Link
                 href={`/stocks/${note.symbol}`}
-                className="inline-flex items-center gap-2 font-semibold text-accent hover:text-teal-800 md:justify-end print:text-zinc-900"
+                className="inline-flex items-center gap-2 font-semibold text-accent hover:text-accent-hover md:justify-end print:text-zinc-900"
               >
                 <LinkIcon className="h-4 w-4" />
                 {note.symbol}
@@ -189,15 +189,15 @@ export default async function NoteReportPage({ params }: { params: { id: string 
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           <div className="rounded-lg border border-line p-4 print:border-zinc-300">
-            <div className="text-xs font-semibold uppercase text-muted">Status</div>
+            <div className="text-xs font-medium text-muted">Status</div>
             <div className="mt-1 text-lg font-semibold text-ink">{note.status === "archived" ? "已归档" : "跟踪中"}</div>
           </div>
           <div className="rounded-lg border border-line p-4 print:border-zinc-300">
-            <div className="text-xs font-semibold uppercase text-muted">Symbol</div>
+            <div className="text-xs font-medium text-muted">Symbol</div>
             <div className="mt-1 text-lg font-semibold text-ink">{note.symbol ?? "未关联"}</div>
           </div>
           <div className="rounded-lg border border-line p-4 print:border-zinc-300">
-            <div className="text-xs font-semibold uppercase text-muted">Format</div>
+            <div className="text-xs font-medium text-muted">Format</div>
             <div className="mt-1 text-lg font-semibold text-ink">Research Report</div>
           </div>
         </div>
@@ -213,7 +213,7 @@ export default async function NoteReportPage({ params }: { params: { id: string 
 
       <AiReportBlock note={note} />
 
-      <section className="break-inside-avoid rounded-lg border border-line bg-white p-5 text-xs leading-5 text-muted shadow-sm print:border-zinc-300 print:shadow-none">
+      <section className="break-inside-avoid rounded-lg border border-line bg-panel p-5 text-xs leading-5 text-muted print:border-zinc-300 print:shadow-none">
         <div className="mb-2 flex items-center gap-2 font-semibold text-ink">
           <ShieldCheck className="h-4 w-4" />
           风险边界

@@ -75,7 +75,7 @@ export function WatchlistAction({ quote }: { quote: QuoteSnapshot }) {
       <button
         type="button"
         onClick={addToWatchlist}
-        className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-ink transition hover:border-accent disabled:cursor-default disabled:border-teal-200 disabled:bg-teal-50 disabled:text-accent"
+        className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-3 py-2 text-sm font-semibold text-ink transition hover:border-accent disabled:cursor-default disabled:border-teal-200 disabled:bg-accent-soft disabled:text-accent"
         disabled={added || saving}
       >
         {added ? <Check className="h-4 w-4" /> : <Star className="h-4 w-4" />}

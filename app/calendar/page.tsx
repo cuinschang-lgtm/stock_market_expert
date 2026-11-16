@@ -51,7 +51,6 @@ export default async function CalendarPage() {
     <div className="space-y-6">
       <section className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold text-accent">Review Calendar</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink">复盘日历</h1>
           <p className="mt-2 text-sm leading-6 text-muted">
             汇总投资逻辑复盘日、公司事件和市场事件，用来安排下一次验证节奏。
@@ -59,7 +58,7 @@ export default async function CalendarPage() {
         </div>
         <Link
           href="/theses"
-          className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent"
+          className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent"
         >
           <NotebookText className="h-4 w-4" />
           投资逻辑
@@ -73,7 +72,7 @@ export default async function CalendarPage() {
         <Metric title="高影响" value={highImpact} icon={AlertTriangle} tone="danger" />
       </section>
 
-      <section className="rounded-lg border border-line bg-white p-4 shadow-sm">
+      <section className="rounded-lg border border-line bg-panel p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold text-ink">数据来源</div>
@@ -111,7 +110,7 @@ function Metric({
   }[tone];
 
   return (
-    <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
+    <div className="rounded-lg border border-line bg-panel p-5">
       <div className="flex items-center gap-2 text-sm font-semibold text-muted">
         <Icon className={`h-4 w-4 ${toneClass}`} />
         {title}
@@ -129,7 +128,7 @@ function CalendarSection({ title, empty, items }: { title: string; empty: string
         <span className="text-sm font-semibold text-muted">{items.length} 条</span>
       </div>
       {items.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-line bg-white p-5 text-sm leading-6 text-muted">{empty}</div>
+        <div className="rounded-lg border border-dashed border-line bg-panel p-5 text-sm leading-6 text-muted">{empty}</div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {items.map((item) => (
@@ -146,7 +145,7 @@ function CalendarCard({ item }: { item: CalendarEventItem }) {
   const impactClass = item.impact === "高" ? "text-danger" : item.impact === "中" ? "text-warn" : "text-muted";
 
   return (
-    <article className="rounded-lg border border-line bg-white p-5 shadow-sm">
+    <article className="rounded-lg border border-line bg-panel p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted">
           <span className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1">
@@ -162,13 +161,13 @@ function CalendarCard({ item }: { item: CalendarEventItem }) {
       <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold text-muted">
         <span>{item.source}</span>
         {item.symbol ? (
-          <Link href={`/stocks/${item.symbol}`} className="inline-flex items-center gap-1 text-accent hover:text-teal-800">
+          <Link href={`/stocks/${item.symbol}`} className="inline-flex items-center gap-1 text-accent hover:text-accent-hover">
             {item.symbol}
             <ExternalLink className="h-3.5 w-3.5" />
           </Link>
         ) : null}
         {item.noteId ? (
-          <Link href={`/notes/${item.noteId}`} className="inline-flex items-center gap-1 text-accent hover:text-teal-800">
+          <Link href={`/notes/${item.noteId}`} className="inline-flex items-center gap-1 text-accent hover:text-accent-hover">
             研究笔记
             <ExternalLink className="h-3.5 w-3.5" />
           </Link>

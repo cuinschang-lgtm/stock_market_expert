@@ -119,7 +119,7 @@ export function ReportCenter() {
 
   if (notes.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-line bg-white p-5 text-sm leading-6 text-muted">
+      <div className="rounded-lg border border-dashed border-line bg-panel p-5 text-sm leading-6 text-muted">
         还没有可汇总的研究笔记。进入 AI Analyst 保存分析后，这里会自动形成报告中心。
       </div>
     );
@@ -127,10 +127,10 @@ export function ReportCenter() {
 
   return (
     <section className="space-y-5">
-      <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
+      <div className="rounded-lg border border-line bg-panel p-4">
         <div className="grid gap-4 lg:grid-cols-[1fr_2fr] lg:items-center">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-accent">
+            <div className="text-xs font-medium text-muted">
               {source === "cloud" ? "Cloud reports" : "Local reports"}
             </div>
             <div className="mt-1 text-sm font-semibold text-ink">
@@ -145,13 +145,13 @@ export function ReportCenter() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="搜索标题、摘要、代码或正文"
-                className="h-10 w-full rounded-lg border border-line bg-white pl-9 pr-3 text-sm font-medium text-ink outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-teal-100"
+                className="h-10 w-full rounded-lg border border-field bg-sunken pl-9 pr-3 text-sm font-medium text-ink outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/30"
               />
             </label>
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-              className="h-10 rounded-lg border border-line bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
+              className="h-10 rounded-lg border border-field bg-sunken px-3 text-sm font-semibold text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
               aria-label="按状态筛选报告"
             >
               {statusOptions.map((option) => (
@@ -163,7 +163,7 @@ export function ReportCenter() {
             <select
               value={tagFilter}
               onChange={(event) => setTagFilter(event.target.value)}
-              className="h-10 rounded-lg border border-line bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
+              className="h-10 rounded-lg border border-field bg-sunken px-3 text-sm font-semibold text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
               aria-label="按标签筛选报告"
             >
               <option value="all">全部标签</option>
@@ -177,7 +177,7 @@ export function ReportCenter() {
               type="button"
               onClick={exportSelected}
               disabled={selectedNotes.length === 0}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-ink px-4 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-300"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-accent-ink transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:bg-sunken disabled:text-muted"
             >
               <Download className="h-4 w-4" />
               批量导出
@@ -192,7 +192,7 @@ export function ReportCenter() {
           onClick={toggleAllFiltered}
           className="inline-flex items-center gap-2 text-sm font-semibold text-ink hover:text-accent"
         >
-          <span className="grid h-5 w-5 place-items-center rounded border border-line bg-white text-xs">
+          <span className="grid h-5 w-5 place-items-center rounded border border-line bg-panel text-xs">
             {allFilteredSelected ? "✓" : ""}
           </span>
           {allFilteredSelected ? "取消选择当前筛选" : "选择当前筛选结果"}
@@ -203,7 +203,7 @@ export function ReportCenter() {
       </div>
 
       {filteredNotes.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-line bg-white p-5 text-sm leading-6 text-muted">
+        <div className="rounded-lg border border-dashed border-line bg-panel p-5 text-sm leading-6 text-muted">
           没有匹配当前筛选条件的报告。
         </div>
       ) : (
@@ -213,19 +213,19 @@ export function ReportCenter() {
             const completeness = reportCompleteness(note);
 
             return (
-              <article key={note.id} className="rounded-lg border border-line bg-white p-5 shadow-sm">
+              <article key={note.id} className="rounded-lg border border-line bg-panel p-5">
                 <div className="flex items-start justify-between gap-3">
                   <button
                     type="button"
                     onClick={() => toggleSelected(note.id)}
-                    className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md border border-line bg-white text-xs font-semibold text-accent"
+                    className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md border border-line bg-panel text-xs font-semibold text-accent"
                     aria-label={selected ? `取消选择 ${note.title}` : `选择 ${note.title}`}
                   >
                     {selected ? "✓" : ""}
                   </button>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent">
+                      <div className="flex items-center gap-2 text-xs font-medium text-muted">
                         <FileText className="h-4 w-4" />
                         {note.tag}
                       </div>
@@ -249,15 +249,15 @@ export function ReportCenter() {
 
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
                   <div className="rounded-lg border border-line p-3">
-                    <div className="text-xs font-semibold uppercase text-muted">完整度</div>
+                    <div className="text-xs font-medium text-muted">完整度</div>
                     <div className="mt-1 text-lg font-semibold text-ink">{completeness}/4</div>
                   </div>
                   <div className="rounded-lg border border-line p-3">
-                    <div className="text-xs font-semibold uppercase text-muted">标的</div>
+                    <div className="text-xs font-medium text-muted">标的</div>
                     <div className="mt-1 truncate text-lg font-semibold text-ink">{note.symbol ?? "未关联"}</div>
                   </div>
                   <div className="rounded-lg border border-line p-3">
-                    <div className="text-xs font-semibold uppercase text-muted">创建</div>
+                    <div className="text-xs font-medium text-muted">创建</div>
                     <div className="mt-1 truncate text-sm font-semibold text-ink">{cnDateTime(note.createdAt)}</div>
                   </div>
                 </div>

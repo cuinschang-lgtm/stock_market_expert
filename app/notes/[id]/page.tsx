@@ -22,14 +22,14 @@ export default async function NoteDetailPage({ params }: { params: { id: string 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Link href="/notes" className="inline-flex items-center gap-2 text-sm font-semibold text-accent hover:text-teal-800">
+        <Link href="/notes" className="inline-flex items-center gap-2 text-sm font-semibold text-accent hover:text-accent-hover">
           <ArrowLeft className="h-4 w-4" />
           返回研究笔记
         </Link>
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/notes/${note.id}/report`}
-            className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-panel"
+            className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2 text-sm font-semibold text-ink transition hover:bg-panel"
           >
             <FileDown className="h-4 w-4" />
             报告视图
@@ -38,10 +38,10 @@ export default async function NoteDetailPage({ params }: { params: { id: string 
         </div>
       </div>
 
-      <section className="rounded-lg border border-line bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-line bg-panel p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="max-w-3xl">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted">
               <FileText className="h-4 w-4" />
               {note.tag}
             </div>
@@ -61,7 +61,7 @@ export default async function NoteDetailPage({ params }: { params: { id: string 
             {note.symbol ? (
               <Link
                 href={`/stocks/${note.symbol}`}
-                className="inline-flex items-center gap-2 font-semibold text-accent hover:text-teal-800 md:justify-end"
+                className="inline-flex items-center gap-2 font-semibold text-accent hover:text-accent-hover md:justify-end"
               >
                 <LinkIcon className="h-4 w-4" />
                 {note.symbol}
@@ -78,7 +78,7 @@ export default async function NoteDetailPage({ params }: { params: { id: string 
       {note.report ? (
         <ReportView report={note.report} />
       ) : (
-        <section className="rounded-lg border border-dashed border-line bg-white p-5 text-sm leading-6 text-muted">
+        <section className="rounded-lg border border-dashed border-line bg-panel p-5 text-sm leading-6 text-muted">
           这条笔记只有摘要内容。后续接入手工编辑器后，可在这里展示完整 Markdown 正文和附件引用。
         </section>
       )}

@@ -109,7 +109,7 @@ export function LocalNotes() {
 
   if (notes.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-line bg-white p-5 text-sm leading-6 text-muted">
+      <div className="rounded-lg border border-dashed border-line bg-panel p-5 text-sm leading-6 text-muted">
         还没有{source === "cloud" ? "云端" : "本地"}保存的笔记。进入 AI Analyst，点击“保存笔记”后会显示在这里。
       </div>
     );
@@ -117,10 +117,10 @@ export function LocalNotes() {
 
   return (
     <section className="space-y-4">
-      <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
+      <div className="rounded-lg border border-line bg-panel p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-accent">
+            <div className="text-xs font-medium text-muted">
               {source === "cloud" ? "Cloud notes" : "Local notes"}
             </div>
             <div className="mt-1 text-sm font-semibold text-ink">
@@ -134,13 +134,13 @@ export function LocalNotes() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="搜索标题、摘要、代码或正文"
-                className="h-10 w-full rounded-lg border border-line bg-white pl-9 pr-3 text-sm font-medium text-ink outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-teal-100"
+                className="h-10 w-full rounded-lg border border-line bg-panel pl-9 pr-3 text-sm font-medium text-ink outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/30"
               />
             </label>
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-              className="h-10 rounded-lg border border-line bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
+              className="h-10 rounded-lg border border-line bg-panel px-3 text-sm font-semibold text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
               aria-label="按状态筛选"
             >
               {statusOptions.map((option) => (
@@ -152,7 +152,7 @@ export function LocalNotes() {
             <select
               value={tagFilter}
               onChange={(event) => setTagFilter(event.target.value)}
-              className="h-10 rounded-lg border border-line bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
+              className="h-10 rounded-lg border border-line bg-panel px-3 text-sm font-semibold text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
               aria-label="按标签筛选"
             >
               <option value="all">全部标签</option>
@@ -165,7 +165,7 @@ export function LocalNotes() {
             <select
               value={groupMode}
               onChange={(event) => setGroupMode(event.target.value as GroupMode)}
-              className="h-10 rounded-lg border border-line bg-white px-3 text-sm font-semibold text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
+              className="h-10 rounded-lg border border-line bg-panel px-3 text-sm font-semibold text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
               aria-label="分组方式"
             >
               <option value="none">不分组</option>
@@ -177,7 +177,7 @@ export function LocalNotes() {
       </div>
 
       {filteredNotes.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-line bg-white p-5 text-sm leading-6 text-muted">
+        <div className="rounded-lg border border-dashed border-line bg-panel p-5 text-sm leading-6 text-muted">
           没有匹配当前筛选条件的笔记。
         </div>
       ) : (
@@ -192,10 +192,10 @@ export function LocalNotes() {
               ) : null}
               <div className="grid gap-4 md:grid-cols-2">
                 {group.notes.map((note) => (
-                  <article key={note.id} className="rounded-lg border border-line bg-white p-5 shadow-sm">
+                  <article key={note.id} className="rounded-lg border border-line bg-panel p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent">
+                        <div className="flex items-center gap-2 text-xs font-medium text-muted">
                           <FileText className="h-4 w-4" />
                           {note.tag}
                         </div>

@@ -30,7 +30,7 @@ export function cnDateTime(value: string) {
 }
 
 export function trendClass(value: number) {
-  if (value > 0) return "text-red-700";
-  if (value < 0) return "text-emerald-700";
+  if (value > 0) return "text-danger";
+  if (value < 0) return "text-ok";
   return "text-muted";
 }

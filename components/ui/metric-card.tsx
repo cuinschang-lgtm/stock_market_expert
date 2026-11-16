@@ -12,13 +12,13 @@ export function MetricCard({
   tone?: "neutral" | "up" | "down";
 }) {
   return (
-    <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
-      <div className="text-xs font-medium uppercase tracking-wide text-muted">{label}</div>
+    <div className="rounded-lg border border-line bg-panel p-4">
+      <div className="text-xs font-medium text-muted">{label}</div>
       <div
         className={cn(
-          "mt-2 text-2xl font-semibold text-ink",
-          tone === "up" && "text-red-700",
-          tone === "down" && "text-emerald-700"
+          "mt-2 font-mono text-2xl font-semibold tabular-nums text-ink",
+          tone === "up" && "text-danger",
+          tone === "down" && "text-ok"
         )}
       >
         {value}

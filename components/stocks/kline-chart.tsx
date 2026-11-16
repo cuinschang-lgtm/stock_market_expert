@@ -55,18 +55,18 @@ export function KlineChart({ data }: { data: KlinePoint[] }) {
         >
           <defs>
             <linearGradient id="priceFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#007a6c" stopOpacity={0.28} />
-              <stop offset="95%" stopColor="#007a6c" stopOpacity={0.02} />
+              <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <CartesianGrid stroke="#d9e0e7" strokeDasharray="3 3" />
+          <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" />
           <XAxis
             dataKey="idx"
             type="number"
             tickFormatter={(idx: number) => rows[idx]?.label ?? ""}
             tickLine={false}
             axisLine={false}
-            tick={{ fill: "#5f6b76", fontSize: 12 }}
+            tick={{ fill: "var(--muted)", fontSize: 12 }}
             domain={["dataMin", "dataMax"]}
           />
           <YAxis
@@ -74,21 +74,23 @@ export function KlineChart({ data }: { data: KlinePoint[] }) {
             tickLine={false}
             axisLine={false}
             width={52}
-            tick={{ fill: "#5f6b76", fontSize: 12 }}
+            tick={{ fill: "var(--muted)", fontSize: 12 }}
           />
           <Tooltip
             formatter={(value: number) => [value.toFixed(2), "收盘价"]}
             labelFormatter={(idx: number) => rows[idx]?.label ?? String(idx)}
             contentStyle={{
-              border: "1px solid #d9e0e7",
+              background: "var(--panel)",
+              border: "1px solid var(--line)",
               borderRadius: 8,
-              boxShadow: "0 10px 30px rgba(20, 28, 36, 0.08)",
+              color: "var(--ink)",
+              boxShadow: "none",
             }}
           />
           <Area
             type="monotone"
             dataKey="close"
-            stroke="#007a6c"
+            stroke="var(--accent)"
             strokeWidth={2}
             fill="url(#priceFill)"
           />

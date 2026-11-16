@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { SearchBox } from "@/components/layout/search-box";
+import { AuthButton } from "@/components/auth/auth-button";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -27,9 +28,9 @@ const navItems = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 border-r border-line bg-white/90 px-4 py-5 backdrop-blur lg:block">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 border-r border-line bg-sunken px-4 py-5 lg:block">
         <Link href="/dashboard" className="flex items-center gap-3 rounded-lg px-2 py-2">
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-ink text-white">
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-accent text-accent-ink">
             <BarChart3 className="h-5 w-5" />
           </div>
           <div>
@@ -64,10 +65,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-10 border-b border-line bg-white/88 px-4 py-3 backdrop-blur md:px-8">
+        <header className="sticky top-0 z-10 border-b border-line bg-sunken px-4 py-3 md:px-8">
           <div className="mx-auto flex max-w-7xl items-center gap-4">
             <Link href="/dashboard" className="flex items-center gap-2 lg:hidden">
-              <div className="grid h-9 w-9 place-items-center rounded-lg bg-ink text-white">
+              <div className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-accent-ink">
                 <BarChart3 className="h-4 w-4" />
               </div>
               <span className="text-sm font-semibold">SME</span>
@@ -77,11 +78,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             <Link
               href="/analyst"
-              className="hidden items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 sm:flex"
+              className="hidden items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-ink transition hover:bg-accent-hover sm:flex"
             >
               <Search className="h-4 w-4" />
               分析
             </Link>
+            <AuthButton />
           </div>
         </header>
         <main className="mx-auto max-w-7xl px-4 py-6 md:px-8">{children}</main>

@@ -4,6 +4,7 @@ import { Archive, CheckCircle2, RotateCcw, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { updateCloudNote } from "@/lib/client-api";
+import { updateStoredNote } from "@/lib/client-storage";
 import type { ResearchNote, ResearchNoteStatus } from "@/lib/types";
 
 const statusCopy: Record<ResearchNoteStatus, string> = {
@@ -15,7 +16,15 @@ function clean(value: string) {
   return value.trim();
 }
 
-export function NoteEditor({ note }: { note: ResearchNote }) {
+export function NoteEditor({
+  note,
+  storage = "cloud",
+  onSaved
+}: {
+  note: ResearchNote;
+  storage?: "cloud" | "local";
+  onSaved?: (note: ResearchNote) => void;
+}) {
   const router = useRouter();
   const [title, setTitle] = useState(note.title);
   const [tag, setTag] = useState(note.tag);
@@ -29,12 +38,13 @@ export function NoteEditor({ note }: { note: ResearchNote }) {
     setSaving(true);
     setMessage(null);
     try {
-      const result = await updateCloudNote(note.id, { title, tag, excerpt, body, status });
-      if (result.configured) {
-        if (!result.note) {
-          throw new Error("保存未写入，请重试");
-        }
-        const saved = result.note;
+      let saved: ResearchNote;
+      if (storage === "local") {
+        saved = updateStoredNote(note.id, { title, tag, excerpt, body, status });
+      } else {
+        const result = await updateCloudNote(note.id, { title, tag, excerpt, body, status });
+        if (!result.configured || !result.note) throw new Error("云端保存不可用，请稍后重试");
+        saved = result.note;
         const expectedBody = clean(body);
         const bodyMatched = expectedBody.length === 0 ? !saved.body : saved.body === expectedBody;
         if (
@@ -47,6 +57,12 @@ export function NoteEditor({ note }: { note: ResearchNote }) {
           throw new Error("保存未写入，请重试");
         }
       }
+      setTitle(saved.title);
+      setTag(saved.tag);
+      setExcerpt(saved.excerpt);
+      setBody(saved.body ?? "");
+      setStatus(saved.status ?? "active");
+      onSaved?.(saved);
       setMessage("已保存");
       router.refresh();
     } catch (error) {
@@ -68,10 +84,10 @@ export function NoteEditor({ note }: { note: ResearchNote }) {
   const archived = status === "archived";
 
   return (
-    <section className="rounded-lg border border-line bg-white p-5 shadow-sm">
+    <section className="rounded-lg border border-line bg-panel p-5">
       <div className="flex flex-col gap-3 border-b border-line pb-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wide text-accent">Editor</div>
+          <div className="text-xs font-medium text-muted">Editor</div>
           <h2 className="mt-1 text-xl font-semibold text-ink">人工复盘</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -99,7 +115,7 @@ export function NoteEditor({ note }: { note: ResearchNote }) {
             type="button"
             onClick={save}
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-wait disabled:bg-muted"
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition hover:bg-accent-hover disabled:cursor-wait disabled:bg-muted"
           >
             <Save className="h-4 w-4" />
             {saving ? "保存中" : "保存"}
@@ -113,7 +129,7 @@ export function NoteEditor({ note }: { note: ResearchNote }) {
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            className="rounded-lg border border-line px-3 py-2 text-sm font-medium text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
+            className="rounded-lg border border-line px-3 py-2 text-sm font-medium text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
           />
         </label>
 
@@ -123,7 +139,7 @@ export function NoteEditor({ note }: { note: ResearchNote }) {
             <input
               value={tag}
               onChange={(event) => setTag(event.target.value)}
-              className="rounded-lg border border-line px-3 py-2 text-sm font-medium text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
+              className="rounded-lg border border-line px-3 py-2 text-sm font-medium text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
             />
           </label>
           <label className="grid gap-2 text-sm font-semibold text-ink">
@@ -131,7 +147,7 @@ export function NoteEditor({ note }: { note: ResearchNote }) {
             <input
               value={excerpt}
               onChange={(event) => setExcerpt(event.target.value)}
-              className="rounded-lg border border-line px-3 py-2 text-sm font-medium text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
+              className="rounded-lg border border-line px-3 py-2 text-sm font-medium text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
             />
           </label>
         </div>
@@ -143,7 +159,7 @@ export function NoteEditor({ note }: { note: ResearchNote }) {
             onChange={(event) => setBody(event.target.value)}
             rows={8}
             placeholder="记录你的判断、证据、待验证问题和后续跟踪点。"
-            className="min-h-48 resize-y rounded-lg border border-line px-3 py-2 text-sm font-medium leading-6 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
+            className="min-h-48 resize-y rounded-lg border border-line px-3 py-2 text-sm font-medium leading-6 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
           />
         </label>
       </div>

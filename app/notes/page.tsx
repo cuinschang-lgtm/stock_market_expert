@@ -17,7 +17,7 @@ export default function NotesPage() {
         </div>
         <Link
           href="/analyst"
-          className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white"
+          className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink"
         >
           <Plus className="h-4 w-4" />
           从分析生成
@@ -28,9 +28,9 @@ export default function NotesPage() {
 
       <section className="grid gap-4 md:grid-cols-2">
         {notes.map((note) => (
-          <article key={note.id} className="rounded-lg border border-line bg-white p-5 shadow-sm">
+          <article key={note.id} className="rounded-lg border border-line bg-panel p-5">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent">
+              <div className="flex items-center gap-2 text-xs font-medium text-muted">
                 <FileText className="h-4 w-4" />
                 {note.tag}
               </div>

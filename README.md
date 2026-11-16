@@ -32,17 +32,26 @@ npm run dev
 
 ## 当前持久化策略
 
-MVP 现在支持 Supabase 云端持久化，并保留浏览器 `localStorage` 兜底。未配置 Supabase service role key 时，用户加入的自选股和 AI 分析笔记会继续保存到当前浏览器。
+MVP 支持注册登录（Supabase Auth）+ 云端持久化，并保留浏览器 `localStorage` 兜底。未配置 Supabase 时，登录入口自动隐藏，用户加入的自选股和 AI 分析笔记继续保存到当前浏览器。
 
 Supabase 项目：
 
 ```text
 NEXT_PUBLIC_SUPABASE_URL=https://uogxhykrxgcnlxqcjnhg.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase anon key，公开客户端密钥>
 SUPABASE_SERVICE_ROLE_KEY=<Supabase project service_role key>
 DEFAULT_USER_ID=demo-user
 ```
 
-初始化数据库时，在 Supabase SQL Editor 执行 `supabase/schema.sql`。当前 MVP 使用固定 `DEFAULT_USER_ID`，下一阶段接入 Supabase Auth 后再切换为真实用户 ID 和 RLS 策略。
+初始化数据库时，在 Supabase SQL Editor 执行 `supabase/schema.sql`。注册登录通过 Supabase Auth（邮箱 + 密码）完成：前端 `AuthButton` 组件管理会话，请求以 `Authorization: Bearer <token>` 携带身份，服务端 `resolveUserId` 校验 token 后按真实用户 ID 读写数据；未登录请求回退到 `DEFAULT_USER_ID`。
+
+## 设计系统（Hallmark）
+
+前端遵循 [hallmark](https://github.com/Nutlope/hallmark) 设计 skill 的 Floor 规则：所有颜色/字体走 token（`tailwind.config.ts` + `app/globals.css`）、无全大写字距标签、每个交互元素有 `:focus-visible` 焦点环、动画带 `prefers-reduced-motion` 兜底、无卡片套卡片。skill 已集成在 `skills/hallmark/`，随时审计：
+
+```bash
+npm run lint:slop -- app components --genre modern-minimal --scope app --url http://localhost:3000 --render
+```
 
 ## 后续数据源
 

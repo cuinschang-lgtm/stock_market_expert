@@ -4,6 +4,7 @@ import { CalendarClock, RotateCcw, Save, Target } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { updateCloudNote } from "@/lib/client-api";
+import { updateStoredNote } from "@/lib/client-storage";
 import type { InvestmentThesis, ResearchNote, ThesisConviction } from "@/lib/types";
 
 const convictionOptions: Array<{ value: ThesisConviction; label: string }> = [
@@ -32,7 +33,15 @@ function defaultHypothesis(note: ResearchNote) {
   return note.excerpt;
 }
 
-export function ThesisTracker({ note }: { note: ResearchNote }) {
+export function ThesisTracker({
+  note,
+  storage = "cloud",
+  onSaved
+}: {
+  note: ResearchNote;
+  storage?: "cloud" | "local";
+  onSaved?: (note: ResearchNote) => void;
+}) {
   const router = useRouter();
   const [coreHypothesis, setCoreHypothesis] = useState(defaultHypothesis(note));
   const [keyMetrics, setKeyMetrics] = useState(listToText(note.thesis?.keyMetrics));
@@ -55,12 +64,16 @@ export function ThesisTracker({ note }: { note: ResearchNote }) {
         conviction,
         nextReviewAt: nextReviewAt || undefined
       };
-      const result = await updateCloudNote(note.id, { thesis });
-      if (result.configured) {
-        if (!result.note?.thesis) {
-          throw new Error("保存未写入，请重试");
-        }
-        const saved = result.note.thesis;
+      let savedNote: ResearchNote;
+      if (storage === "local") {
+        savedNote = updateStoredNote(note.id, { thesis });
+      } else {
+        const result = await updateCloudNote(note.id, { thesis });
+        if (!result.configured || !result.note?.thesis) throw new Error("云端保存不可用，请稍后重试");
+        savedNote = result.note;
+      }
+      const saved = savedNote.thesis;
+      if (!saved) throw new Error("保存未写入，请重试");
         const expectedCore = thesis.coreHypothesis.trim();
         if (
           saved.coreHypothesis !== expectedCore ||
@@ -72,7 +85,13 @@ export function ThesisTracker({ note }: { note: ResearchNote }) {
         ) {
           throw new Error("保存未写入，请重试");
         }
-      }
+      setCoreHypothesis(saved.coreHypothesis);
+      setKeyMetrics(listToText(saved.keyMetrics));
+      setCatalysts(listToText(saved.catalysts));
+      setInvalidationSignals(listToText(saved.invalidationSignals));
+      setConviction(saved.conviction ?? "medium");
+      setNextReviewAt(saved.nextReviewAt ?? "");
+      onSaved?.(savedNote);
       setMessage("已保存");
       router.refresh();
     } catch (error) {
@@ -93,10 +112,10 @@ export function ThesisTracker({ note }: { note: ResearchNote }) {
   }
 
   return (
-    <section className="rounded-lg border border-line bg-white p-5 shadow-sm">
+    <section className="rounded-lg border border-line bg-panel p-5">
       <div className="flex flex-col gap-3 border-b border-line pb-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wide text-accent">Thesis Tracker</div>
+          <div className="text-xs font-medium text-muted">Thesis Tracker</div>
           <h2 className="mt-1 text-xl font-semibold text-ink">投资逻辑追踪器</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -127,7 +146,7 @@ export function ThesisTracker({ note }: { note: ResearchNote }) {
             type="button"
             onClick={save}
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-wait disabled:bg-muted"
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition hover:bg-accent-hover disabled:cursor-wait disabled:bg-muted"
           >
             <Save className="h-4 w-4" />
             {saving ? "保存中" : "保存逻辑"}
@@ -142,7 +161,7 @@ export function ThesisTracker({ note }: { note: ResearchNote }) {
             value={coreHypothesis}
             onChange={(event) => setCoreHypothesis(event.target.value)}
             rows={3}
-            className="resize-y rounded-lg border border-line px-3 py-2 text-sm font-medium leading-6 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
+            className="resize-y rounded-lg border border-line px-3 py-2 text-sm font-medium leading-6 text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
           />
         </label>
 
@@ -154,7 +173,7 @@ export function ThesisTracker({ note }: { note: ResearchNote }) {
               onChange={(event) => setKeyMetrics(event.target.value)}
               rows={6}
               placeholder="每行一个指标"
-              className="resize-y rounded-lg border border-line px-3 py-2 text-sm font-medium leading-6 text-ink outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-teal-100"
+              className="resize-y rounded-lg border border-line px-3 py-2 text-sm font-medium leading-6 text-ink outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/30"
             />
           </label>
           <label className="grid gap-2 text-sm font-semibold text-ink">
@@ -164,7 +183,7 @@ export function ThesisTracker({ note }: { note: ResearchNote }) {
               onChange={(event) => setCatalysts(event.target.value)}
               rows={6}
               placeholder="每行一个事件"
-              className="resize-y rounded-lg border border-line px-3 py-2 text-sm font-medium leading-6 text-ink outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-teal-100"
+              className="resize-y rounded-lg border border-line px-3 py-2 text-sm font-medium leading-6 text-ink outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/30"
             />
           </label>
           <label className="grid gap-2 text-sm font-semibold text-ink">
@@ -174,7 +193,7 @@ export function ThesisTracker({ note }: { note: ResearchNote }) {
               onChange={(event) => setInvalidationSignals(event.target.value)}
               rows={6}
               placeholder="每行一个条件"
-              className="resize-y rounded-lg border border-line px-3 py-2 text-sm font-medium leading-6 text-ink outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-teal-100"
+              className="resize-y rounded-lg border border-line px-3 py-2 text-sm font-medium leading-6 text-ink outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/30"
             />
           </label>
         </div>
@@ -187,7 +206,7 @@ export function ThesisTracker({ note }: { note: ResearchNote }) {
               type="date"
               value={nextReviewAt}
               onChange={(event) => setNextReviewAt(event.target.value)}
-              className="h-10 w-full rounded-lg border border-line pl-9 pr-3 text-sm font-medium text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-teal-100"
+              className="h-10 w-full rounded-lg border border-field bg-sunken pl-9 pr-3 text-sm font-medium text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
             />
           </span>
         </label>

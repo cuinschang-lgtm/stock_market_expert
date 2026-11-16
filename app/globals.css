@@ -1,11 +1,25 @@
+/* Hallmark system=stock-market-expert · theme: console (graphite) by direction · genre=modern-minimal · surface: absolute · posture: restrained · palette=teal-on-graphite · type=Inter/sans · modes: dark-only */
+/* critique: an instrument kept by careful people — graphite ground in three lightnesses, hairline panels, mono numerals, teal accent; no glow, no shadow */
+/* waive 74: up/down market colors (danger/ok) are A-share market-conventional semantics kept as named tokens on purpose */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
-  background: #f2f5f7;
-  color: #101418;
+  --paper: #14181d;
+  --panel: #1b222b;
+  --sunken: #0f1319;
+  --ink: #e8edf3;
+  --muted: #93a1b0;
+  --accent: #2db5a3;
+  --accent-wash: rgba(45, 181, 163, 0.16);
+  --line: #323d49;
+  --field: #5c6b78;
+  --print-paper: #ffffff;
+  --font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color-scheme: dark;
+  background: var(--paper);
+  color: var(--ink);
 }
 
 * {
@@ -14,17 +28,15 @@
 
 html {
   min-width: 320px;
+  overflow-x: clip;
 }
 
 body {
   margin: 0;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(242, 245, 247, 1) 260px),
-    #f2f5f7;
-  color: #101418;
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  overflow-x: clip;
 }
 
 a {
@@ -38,18 +50,56 @@ textarea {
   font: inherit;
 }
 
+/* Hallmark floor 26a/15: every interactive element answers the keyboard */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* form fields answer mouse focus too; sloplint 26a checks visible focus programmatically */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 1.5px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Hallmark reflex 26b: pressed state on every control (transform, not opacity) */
+button:active:not(:disabled),
+a:active {
+  transform: translateY(0.5px);
+}
+
+/* Hallmark dark discipline: elevation by lightness — hairline ring instead of glow */
+.card-ring {
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
 ::selection {
-  background: rgba(0, 122, 108, 0.16);
+  background: var(--accent-wash);
+}
+
+/* Chromium 140+ removed -webkit-box: dual-path line clamping.
+   -webkit-box engines clamp gracefully; flow-root engines fall back to a hard
+   2-line height cap (leading-6 x 2) so text never overflows its card. */
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  max-height: 3rem;
 }
 
 @media print {
   :root {
-    background: #ffffff;
+    background: var(--print-paper);
     color: #111827;
   }
 
   body {
-    background: #ffffff;
+    background: var(--print-paper);
   }
 
   .print-hidden,

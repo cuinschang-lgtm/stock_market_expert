@@ -1,21 +1,31 @@
 import type { AnalystReport } from "@/lib/types";
 import { cnDateTime } from "@/lib/formatters";
 
+/** 历史报告的 summary 可能混入 markdown 标记，展示前统一清洗 */
+function plainSummary(text: string) {
+  return text
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 export function ReportView({ report }: { report: AnalystReport }) {
   return (
-    <article className="rounded-lg border border-line bg-white p-5 shadow-sm">
+    <article className="rounded-lg border border-line bg-panel p-5">
       <div className="flex flex-col gap-2 border-b border-line pb-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wide text-accent">{report.intent}</div>
+          <div className="text-xs font-medium text-muted">{report.intent.replace(/_/g, " ")}</div>
           <h2 className="mt-1 text-xl font-semibold text-ink">{report.target}</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">{report.summary}</p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">{plainSummary(report.summary)}</p>
         </div>
         <div className="whitespace-nowrap text-xs text-muted">{cnDateTime(report.generatedAt)}</div>
       </div>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
+      <div className="mt-5 grid gap-x-8 gap-y-5 md:grid-cols-2">
         {report.sections.map((section) => (
-          <section key={section.title} className="rounded-lg border border-line bg-panel p-4">
+          <section key={section.title} className="border-t border-line pt-3">
             <h3 className="text-sm font-semibold text-ink">{section.title}</h3>
             <ul className="mt-3 space-y-2 text-sm leading-6 text-muted">
               {section.points.map((point) => (
@@ -29,7 +39,7 @@ export function ReportView({ report }: { report: AnalystReport }) {
         ))}
       </div>
 
-      <div className="mt-5 rounded-lg border border-line p-4">
+      <div className="mt-5 border-t border-line pt-3">
         <div className="text-sm font-semibold text-ink">数据来源</div>
         <div className="mt-2 space-y-1 text-xs text-muted">
           {report.sources.map((source) => (

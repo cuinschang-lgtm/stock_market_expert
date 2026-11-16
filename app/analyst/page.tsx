@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Bot, Loader2, RotateCw, Search } from "lucide-react";
+import { AlertCircle, Loader2, RotateCw, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { ReportView } from "@/components/analyst/report-view";
@@ -85,14 +85,10 @@ function AnalystContent() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-line bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-line bg-panel p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="flex items-center gap-2 text-sm font-semibold text-accent">
-              <Bot className="h-4 w-4" />
-              AI Analyst
-            </p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink">结构化投研分析</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-ink">结构化投研分析</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
               基于 DeepSeek AI 的结构化投研分析：当前位置、估值水位、短期事件和风险提示。
             </p>
@@ -105,8 +101,8 @@ function AnalystContent() {
                 onClick={() => selectSymbol(item)}
                 className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
                   item === symbol
-                    ? "border-accent bg-teal-50 text-accent"
-                    : "border-line bg-white text-muted hover:border-accent hover:text-ink"
+                    ? "border-accent bg-accent-soft text-accent"
+                    : "border-line bg-panel text-muted hover:border-accent hover:text-ink"
                 }`}
               >
                 {item}
@@ -118,16 +114,16 @@ function AnalystContent() {
 
       {/* 加载中 */}
       {loading && (
-        <section className="rounded-lg border border-line bg-white p-8 text-center shadow-sm">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-accent" />
-          <p className="mt-4 text-sm font-semibold text-ink">AI 正在分析 {symbol}...</p>
+        <section className="rounded-lg border border-line bg-panel p-8 text-center">
+          <Loader2 className="mx-auto h-8 w-8 motion-safe:animate-spin text-accent" />
+          <p className="mt-4 text-sm font-semibold text-ink">AI 正在分析 {symbol}…</p>
           <p className="mt-2 text-xs text-muted">调用 DeepSeek AI 生成结构化报告，约 5-10 秒</p>
         </section>
       )}
 
       {/* 错误提示 */}
       {!loading && error && (
-        <section className="rounded-lg border border-danger/30 bg-red-50 p-6 text-center shadow-sm">
+        <section className="rounded-lg border border-danger/30 bg-danger-soft p-6 text-center">
           <AlertCircle className="mx-auto h-7 w-7 text-danger" />
           <p className="mt-3 text-sm font-semibold text-danger">无法生成分析</p>
           <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted">{error}</p>
@@ -135,7 +131,7 @@ function AnalystContent() {
             <button
               type="button"
               onClick={() => router.push("/dashboard")}
-              className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent"
+              className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent"
             >
               <Search className="h-4 w-4" />
               回到搜索
@@ -143,7 +139,7 @@ function AnalystContent() {
             <button
               type="button"
               onClick={() => fetchAnalysis(symbol)}
-              className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent"
+              className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent"
             >
               <RotateCw className="h-4 w-4" />
               重试
@@ -179,7 +175,7 @@ export default function AnalystPage() {
     <Suspense
       fallback={
         <div className="flex h-64 items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-accent" />
+          <Loader2 className="h-6 w-6 motion-safe:animate-spin text-accent" />
         </div>
       }
     >

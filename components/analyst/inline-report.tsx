@@ -50,8 +50,8 @@ export function InlineReport({ apiPath, loadingLabel }: InlineReportProps) {
 
   if (loading) {
     return (
-      <section className="rounded-lg border border-line bg-white p-6 text-center shadow-sm">
-        <Loader2 className="mx-auto h-6 w-6 animate-spin text-accent" />
+      <section className="rounded-lg border border-line bg-panel p-6 text-center">
+        <Loader2 className="mx-auto h-6 w-6 motion-safe:animate-spin text-accent" />
         <p className="mt-3 text-sm font-semibold text-ink">{loadingLabel}</p>
         <p className="mt-1 text-xs text-muted">调用 DeepSeek AI，约 5-10 秒</p>
       </section>
@@ -60,13 +60,13 @@ export function InlineReport({ apiPath, loadingLabel }: InlineReportProps) {
 
   if (error) {
     return (
-      <section className="rounded-lg border border-danger/30 bg-red-50 p-5 text-center shadow-sm">
+      <section className="rounded-lg border border-danger/30 bg-danger-soft p-5 text-center">
         <p className="text-sm font-semibold text-danger">AI 分析加载失败</p>
         <p className="mt-1 text-xs text-muted">{error}</p>
         <button
           type="button"
           onClick={fetchReport}
-          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-1.5 text-xs font-semibold text-ink transition hover:border-accent hover:text-accent"
+          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-3 py-1.5 text-xs font-semibold text-ink transition hover:border-accent hover:text-accent"
         >
           <RotateCw className="h-3.5 w-3.5" />
           重试

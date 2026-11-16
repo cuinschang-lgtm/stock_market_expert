@@ -37,7 +37,6 @@ export default async function ThesesPage() {
     <div className="space-y-6">
       <section className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold text-accent">Thesis Center</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink">投资逻辑</h1>
           <p className="mt-2 text-sm leading-6 text-muted">
             集中跟踪核心假设、验证指标、催化事件和失效条件；所有内容来自云端研究笔记。
@@ -45,7 +44,7 @@ export default async function ThesesPage() {
         </div>
         <Link
           href="/notes"
-          className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent"
+          className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent"
         >
           <FileText className="h-4 w-4" />
           查看笔记
@@ -53,28 +52,28 @@ export default async function ThesesPage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
+        <div className="rounded-lg border border-line bg-panel p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-muted">
             <Target className="h-4 w-4 text-accent" />
             已建立
           </div>
           <div className="mt-3 text-3xl font-semibold text-ink">{thesisNotes.length}</div>
         </div>
-        <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
+        <div className="rounded-lg border border-line bg-panel p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-muted">
             <CalendarClock className="h-4 w-4 text-warn" />
             待复盘
           </div>
           <div className="mt-3 text-3xl font-semibold text-ink">{dueNotes.length}</div>
         </div>
-        <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
+        <div className="rounded-lg border border-line bg-panel p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-muted">
             <CircleDashed className="h-4 w-4 text-muted" />
             待补全
           </div>
           <div className="mt-3 text-3xl font-semibold text-ink">{missingNotes.length}</div>
         </div>
-        <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
+        <div className="rounded-lg border border-line bg-panel p-5">
           <div className="text-sm font-semibold text-muted">确信度分布</div>
           <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-muted">
             <span className="rounded-md border border-line px-2 py-1">高 {highCount}</span>
@@ -85,7 +84,7 @@ export default async function ThesesPage() {
       </section>
 
       {!result.configured ? (
-        <section className="rounded-lg border border-dashed border-line bg-white p-5 text-sm leading-6 text-muted">
+        <section className="rounded-lg border border-dashed border-line bg-panel p-5 text-sm leading-6 text-muted">
           Supabase 尚未配置，投资逻辑中心需要云端笔记数据。
         </section>
       ) : null}
@@ -102,7 +101,7 @@ export default async function ThesesPage() {
               if (!thesis) return null;
               const due = isReviewDue(thesis.nextReviewAt);
               return (
-                <article key={note.id} className="rounded-lg border border-line bg-white p-5 shadow-sm">
+                <article key={note.id} className="rounded-lg border border-line bg-panel p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted">
                       <span className="rounded-md border border-line px-2 py-1">确信度 {convictionCopy[thesis.conviction ?? "medium"]}</span>
@@ -119,7 +118,7 @@ export default async function ThesesPage() {
                       )}
                     </div>
                     {note.symbol ? (
-                      <Link href={`/stocks/${note.symbol}`} className="text-xs font-semibold text-accent hover:text-teal-800">
+                      <Link href={`/stocks/${note.symbol}`} className="text-xs font-semibold text-accent hover:text-accent-hover">
                         {note.symbol}
                       </Link>
                     ) : null}
@@ -159,7 +158,7 @@ export default async function ThesesPage() {
               <Link
                 key={note.id}
                 href={`/notes/${note.id}`}
-                className="rounded-lg border border-dashed border-line bg-white p-4 transition hover:border-accent"
+                className="rounded-lg border border-dashed border-line bg-panel p-4 transition hover:border-accent"
               >
                 <div className="text-xs font-semibold text-accent">{note.tag}</div>
                 <div className="mt-2 text-sm font-semibold text-ink">{note.title}</div>
@@ -175,7 +174,7 @@ export default async function ThesesPage() {
 
 function MiniList({ title, items }: { title: string; items: string[] }) {
   return (
-    <div className="rounded-lg border border-line bg-panel p-3">
+    <div className="border-t border-line pt-2">
       <div className="text-xs font-semibold text-ink">{title}</div>
       {items.length > 0 ? (
         <ul className="mt-2 space-y-1 text-xs leading-5 text-muted">

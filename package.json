@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "lint:slop": "node skills/hallmark/scripts/sloplint.mjs",
     "verify:market-data": "node scripts/verify-market-data.mjs"
   },
   "dependencies": {

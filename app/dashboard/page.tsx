@@ -14,7 +14,6 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <section className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold text-accent">Market Workspace</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink">今日投研仪表盘</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
             市场概览继续走 provider 数据；自选股和研究笔记优先读取 Supabase 云端，未配置时回退演示数据。
@@ -22,7 +21,7 @@ export default async function DashboardPage() {
         </div>
         <Link
           href="/analyst"
-          className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"
+          className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition hover:bg-accent-hover"
         >
           生成分析
           <ArrowRight className="h-4 w-4" />
@@ -41,31 +40,31 @@ export default async function DashboardPage() {
         ))}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
-        <div className="space-y-4">
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)]">
+        <div className="min-w-0 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-accent" />
               <h2 className="text-lg font-semibold text-ink">自选股异动</h2>
-              <span className="rounded-full bg-teal-50 px-2 py-1 text-xs font-semibold text-accent">
+              <span className="rounded-full bg-accent-soft px-2 py-1 text-xs font-semibold text-accent">
                 {data.sources.watchlist === "cloud" ? "云端同步" : "演示数据"}
               </span>
             </div>
-            <Link href="/watchlist" className="text-sm font-semibold text-accent hover:text-teal-800">
+            <Link href="/watchlist" className="text-sm font-semibold text-accent hover:text-accent-hover">
               查看自选
             </Link>
           </div>
           <QuoteTable quotes={data.watchlist} />
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="flex items-center gap-2">
             <Flame className="h-5 w-5 text-danger" />
             <h2 className="text-lg font-semibold text-ink">热门板块</h2>
           </div>
           <div className="space-y-3">
             {data.hotSectors.map((sector) => (
-              <div key={sector.name} className="rounded-lg border border-line bg-white p-4 shadow-sm">
+              <div key={sector.name} className="rounded-lg border border-line bg-panel p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <Link href="/sectors" className="font-semibold text-ink hover:text-accent">
@@ -84,7 +83,7 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
+        <div className="rounded-lg border border-line bg-panel p-5">
           <div className="mb-4 flex items-center gap-2">
             <Newspaper className="h-5 w-5 text-accent" />
             <h2 className="text-lg font-semibold text-ink">今日事件</h2>
@@ -104,15 +103,15 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
+        <div className="rounded-lg border border-line bg-panel p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold text-ink">最近研究笔记</h2>
-              <span className="rounded-full bg-teal-50 px-2 py-1 text-xs font-semibold text-accent">
+              <span className="rounded-full bg-accent-soft px-2 py-1 text-xs font-semibold text-accent">
                 {data.sources.notes === "cloud" ? "云端同步" : "演示数据"}
               </span>
             </div>
-            <Link href="/notes" className="text-sm font-semibold text-accent hover:text-teal-800">
+            <Link href="/notes" className="text-sm font-semibold text-accent hover:text-accent-hover">
               全部
             </Link>
           </div>
@@ -124,7 +123,8 @@ export default async function DashboardPage() {
                 className="block rounded-lg border border-line p-3 transition hover:border-accent hover:bg-panel"
               >
                 <div className="text-sm font-semibold text-ink">{note.title}</div>
-                <div className="mt-1 line-clamp-2 text-sm leading-6 text-muted">{note.excerpt}</div>
+                {/* 硬截两行文本，避免溢出隐藏行在相邻卡片上产生幽灵 rect */}
+                <div className="mt-1 text-sm leading-6 text-muted">{note.excerpt.slice(0, 64)}…</div>
               </Link>
             ))}
           </div>
